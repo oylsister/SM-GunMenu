@@ -49,7 +49,6 @@ public Plugin myinfo =
 
 public void OnPluginStart()
 {
-    RegConsoleCmd("say", Command_Say);
     RegConsoleCmd("sm_gun", Command_GunMenu);
     RegAdminCmd("sm_restrict", Command_Restrict, ADMFLAG_GENERIC);
     RegAdminCmd("sm_unrestrict", Command_Unrestrict, ADMFLAG_GENERIC);
@@ -111,6 +110,11 @@ public void OnMapStart()
     g_bBuyZoneOnly = GetConVarBool(g_Cvar_BuyZoneOnly);
 }
 
+public void OnConfigsExecuted()
+{
+    CreateGunCommand();
+}
+
 void LoadConfig()
 {
     KeyValues kv;
@@ -151,61 +155,93 @@ void LoadConfig()
     }
 }
 
-public Action Command_Say(int client, int args)
+void CreateGunCommand()
 {
-    if(client < 1)
-    {
-        return Plugin_Continue;
-    }
-    if(!IsPlayerAlive(client))
-    {
-        return Plugin_Continue;
-    }
-    if(ZRiot_IsClientZombie(client))
-    {
-        return Plugin_Continue;
-    }
-
-    char sBuffer[64];
-    char sBuffer2[64];
-
-    GetCmdArgString(sBuffer, sizeof(sBuffer));
-
-    if(StrContains(sBuffer, "!") == -1 && StrContains(sBuffer, "/") == -1)
-    {
-        return Plugin_Continue;
-    }
+    char weaponcommand[64];
+    char weaponentity[64];
     
-    ReplaceString(sBuffer, sizeof(sBuffer), "\"", "");
-    ReplaceString(sBuffer, sizeof(sBuffer), "/", "");
-    ReplaceString(sBuffer, sizeof(sBuffer), "!", "");
-
-    if(StrContains(sBuffer, "sm_") == -1)
-    {
-        Format(sBuffer2, sizeof(sBuffer2), "sm_");
-        StrCat(sBuffer2, sizeof(sBuffer2), sBuffer);
-    }
-    for (int i = 0; i < g_iTotal; i++)
-    {
-        if(StrEqual(sBuffer, g_Weapon[i].data_command, false) || StrEqual(sBuffer2, g_Weapon[i].data_command, false))
-        {
-            PurchaseWeapon(client, g_Weapon[i].data_entity);
-            break;
-        }
-    }
-    return Plugin_Continue;
-}
-
-public void OnClientSayCommand_Post(int client, const char[] command, const char[] sArgs)
-{
     for(int i = 0; i < g_iTotal; i++)
     {
-         if(StrEqual(command, g_Weapon[i].data_command, false))
+        Format(weaponcommand, sizeof(weaponcommand), "%s", g_Weapon[i].data_command);
+        if(weaponcommand[0])
         {
-            PurchaseWeapon(client, g_Weapon[i].data_entity);
-            break;
+            Format(weaponentity, sizeof(weaponentity), "%s", g_Weapon[i].data_entity);
+
+            if(FindCharInString(weaponcommand, ',') != -1)
+            {
+                int idx;
+                int lastidx;
+                while((idx = FindCharInString(weaponcommand[lastidx], ',')) != -1)
+                {
+                    char out[64];
+                    char fmt[64];
+                    Format(fmt, sizeof(fmt), "%%.%ds", idx);
+                    Format(out, sizeof(out), fmt, weaponcommand[lastidx]);
+                    RegConsoleCmd(out, WeaponBuyCommand, weaponentity);
+                    lastidx += ++idx;
+
+                    if(FindCharInString(weaponcommand[lastidx], ',') == -1 && weaponcommand[lastidx+1] != '\0')
+                    {
+                        RegConsoleCmd(weaponcommand[lastidx], WeaponBuyCommand, weaponentity);
+                    }
+                }
+            }
+            else
+            {
+                RegConsoleCmd(weaponcommand, WeaponBuyCommand, weaponentity);
+            }
         }
     }
+}
+
+public Action WeaponBuyCommand(int client, int args)
+{
+    char command[64];
+    char weaponcommand[64];
+    char weaponentity[64];
+
+    GetCmdArg(0, command, sizeof(command));
+
+    for(int i = 0; i < g_iTotal; i++)
+    {
+        Format(weaponcommand, sizeof(weaponcommand), g_Weapon[i].data_command);
+
+        if(FindCharInString(weaponcommand, ',') != -1)
+        {
+            int idx;
+            int lastidx;
+            while((idx = FindCharInString(weaponcommand[lastidx], ',')) != -1)
+            {
+                if(!strncmp(command, weaponcommand[lastidx], idx))
+                {
+                    Format(weaponentity, sizeof(weaponentity), "%s", g_Weapon[i].data_entity);
+                    PurchaseWeapon(client, weaponentity);
+                    return Plugin_Stop;
+                }
+                lastidx += ++idx;
+
+                if(FindCharInString(weaponcommand[lastidx], ',') == -1 && weaponcommand[lastidx+1] != '\0')
+                {
+                    if(!strncmp(command, weaponcommand[lastidx], idx))
+                    {
+                        Format(weaponentity, sizeof(weaponentity), "%s", g_Weapon[i].data_entity);
+                        PurchaseWeapon(client, weaponentity);  
+                        return Plugin_Stop;
+                    }
+                }
+            }
+        }
+        else
+        {
+            if(StrEqual(command, weaponcommand))
+            {
+                Format(weaponentity, sizeof(weaponentity), "%s", g_Weapon[i].data_entity);
+                PurchaseWeapon(client, weaponentity);
+                return Plugin_Stop;
+            }
+        }
+    }
+    return Plugin_Handled;
 }
 
 public Action CS_OnBuyCommand(int client, const char[] weapon)
@@ -233,22 +269,7 @@ public Action CS_OnBuyCommand(int client, const char[] weapon)
 
         if(StrEqual(weapon, reformat, false))
         {
-            if(g_Weapon[i].data_restrict == true)
-            {
-                PrintToChat(client, " \x04%s\x01 \x04\"%s\" has been restricted.", sTag, g_Weapon[i].data_name);
-                break;
-            }
-            int cash = GetEntProp(client, Prop_Send, "m_iAccount");
-
-            if(g_Weapon[i].data_price > cash)
-            {
-                PrintToChat(client, " \x04%s\x01 You don't have enough cash to purchase this item.", sTag);
-                break;
-            }
-
-            SetEntProp(client, Prop_Send, "m_iAccount", cash - g_Weapon[i].data_price);
-            GivePlayerItem(client, g_Weapon[i].data_entity);
-            PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\" \x01type \x06%s \x01to purchase again.", sTag, g_Weapon[i].data_name, g_Weapon[i].data_command);
+            PurchaseWeapon(client, g_Weapon[i].data_entity);
             break;
         }
     }
@@ -324,7 +345,7 @@ public void RestrictWeapon(const char[] weapon)
         if(StrEqual(weapon, g_Weapon[i].data_name, false))
         {
             g_Weapon[i].data_restrict = true;
-            PrintToChatAll(" \x04%s\x01 \x04\"%s\" has been restricted", sTag, g_Weapon[i].data_name);
+            PrintToChatAll(" \x04%s\x01 \x05\"%s\" \x01has been restricted", sTag, g_Weapon[i].data_name);
             break;
         }
     }
@@ -337,7 +358,7 @@ public void UnrestrictWeapon(const char[] weapon)
         if(StrEqual(weapon, g_Weapon[i].data_name, false))
         {
             g_Weapon[i].data_restrict = false;
-            PrintToChatAll(" \x04%s\x01 \x04\"%s\" has been unrestricted.", sTag, g_Weapon[i].data_name);
+            PrintToChatAll(" \x04%s\x01 \x05\"%s\" \x01has been unrestricted.", sTag, g_Weapon[i].data_name);
             break;
         }
     }
@@ -353,11 +374,11 @@ public void Toggle_RestrictWeapon(const char[] weapon)
 
             if(g_Weapon[i].data_restrict == true)
             {
-                PrintToChatAll(" \x04%s\x01 \x04\"%s\" has been restricted.", sTag, g_Weapon[i].data_name);
+                PrintToChatAll(" \x04%s\x01 \x05\"%s\" \x01has been restricted.", sTag, g_Weapon[i].data_name);
             }
             else
             {
-                PrintToChatAll(" \x04%s\x01 \x04\"%s\" has been unrestricted.", sTag, g_Weapon[i].data_name);
+                PrintToChatAll(" \x04%s\x01 \x05\"%s\" \x01has been unrestricted.", sTag, g_Weapon[i].data_name);
             }
             break;
         }
@@ -863,6 +884,7 @@ public void RestrictPrimaryMenu(int client)
     }
     menu.ExitBackButton = true;
     menu.ExitButton = true;
+    menu.Display(client, MENU_TIME_FOREVER);
 }
 
 public void RestrictSecondaryMenu(int client)
@@ -880,6 +902,7 @@ public void RestrictSecondaryMenu(int client)
     }
     menu.ExitBackButton = true;
     menu.ExitButton = true;
+    menu.Display(client, MENU_TIME_FOREVER);
 }
 
 public void RestrictGrenadeMenu(int client)
@@ -897,6 +920,7 @@ public void RestrictGrenadeMenu(int client)
     }
     menu.ExitBackButton = true;
     menu.ExitButton = true;
+    menu.Display(client, MENU_TIME_FOREVER);
 }
 
 public void RestrictThrowableMenu(int client)
@@ -914,6 +938,7 @@ public void RestrictThrowableMenu(int client)
     }
     menu.ExitBackButton = true;
     menu.ExitButton = true;
+    menu.Display(client, MENU_TIME_FOREVER);
 }
 
 public void RestrictFireGrenadeMenu(int client)
@@ -931,6 +956,7 @@ public void RestrictFireGrenadeMenu(int client)
     }
     menu.ExitBackButton = true;
     menu.ExitButton = true;
+    menu.Display(client, MENU_TIME_FOREVER);
 }
 
 public int SelectRestrictMenuHandler(Menu menu, MenuAction action, int param1, int param2)
