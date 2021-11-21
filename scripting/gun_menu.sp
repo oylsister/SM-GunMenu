@@ -10,9 +10,10 @@
 
 #define SLOT_PRIMARY 0
 #define SLOT_SECONDARY 1
-#define SLOT_GRENADE 2
-#define SLOT_THROWABLE 3
-#define SLOT_FIRE 4
+#define SLOT_KNIFE 2
+#define SLOT_GRENADE 3
+#define SLOT_THROWABLE 4
+#define SLOT_FIRE 5
 
 char sTag[] = "[Weapon]";
 
@@ -32,6 +33,7 @@ Weapon_Data g_Weapon[64];
 
 bool g_bBuyZoneOnly = false;
 bool g_bAllowLoadout = false;
+bool g_bCommandInitialized = false;
 
 ConVar g_Cvar_BuyZoneOnly;
 
@@ -56,6 +58,7 @@ public void OnPluginStart()
 
     g_Cvar_BuyZoneOnly = CreateConVar("sm_gunmenu_buyzoneonly", "0.0", "Only allow to purchase on buyzone only", _, true, 0.0, true, 1.0);
 
+    g_bCommandInitialized = false;
     AutoExecConfig();
 }
 
@@ -106,12 +109,12 @@ public void OnLibraryRemoved(const char[] name)
 
 public void OnMapStart()
 {
-    LoadConfig();
     g_bBuyZoneOnly = GetConVarBool(g_Cvar_BuyZoneOnly);
 }
 
 public void OnConfigsExecuted()
 {
+    LoadConfig();
     CreateGunCommand();
 }
 
@@ -157,6 +160,11 @@ void LoadConfig()
 
 void CreateGunCommand()
 {
+    if(g_bCommandInitialized)
+    {
+        return;
+    }
+
     char weaponcommand[64];
     char weaponentity[64];
     
@@ -192,6 +200,7 @@ void CreateGunCommand()
             }
         }
     }
+    g_bCommandInitialized = true;
 }
 
 public Action WeaponBuyCommand(int client, int args)
@@ -720,9 +729,25 @@ public void PurchaseWeapon(int client, const char[] entity)
                 break;
             }
 
+            int weapon = GetPlayerWeaponSlot(client, g_Weapon[i].data_slot);
+            int slot = g_Weapon[i].data_slot;
+
+            if(slot != SLOT_KNIFE || slot != SLOT_GRENADE || slot != SLOT_THROWABLE || slot != SLOT_FIRE)
+            {
+                if(weapon != -1)
+                {
+                    CS_DropWeapon(client, weapon, true, false);
+                }
+            }
+
+            else if(slot == SLOT_THROWABLE || slot == SLOT_FIRE)
+            {
+                slot = SLOT_GRENADE;
+            }
+
             SetEntProp(client, Prop_Send, "m_iAccount", cash - g_Weapon[i].data_price);
             GivePlayerItem(client, g_Weapon[i].data_entity);
-            PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\" \x01type \x06%s \x01to purchase again.", sTag, g_Weapon[i].data_name, g_Weapon[i].data_command);
+            PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\" \x01. Select weapon from menu or use command to purchase again.", sTag, g_Weapon[i].data_name);
             break;
         }
     }
