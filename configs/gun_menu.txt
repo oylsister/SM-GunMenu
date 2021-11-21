@@ -1,0 +1,9 @@
+"weapons"
+{
+    "AK-47"
+    {
+        "entity"    "weapon_ak47"
+        "price"     "3500"
+        
+    }
+}
