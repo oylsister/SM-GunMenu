@@ -15,8 +15,6 @@
 #define SLOT_THROWABLE 4
 #define SLOT_FIRE 5
 
-char sTag[] = "[Weapon]";
-
 enum struct Weapon_Data
 {
     char data_name[64];
@@ -32,33 +30,50 @@ int g_iTotal;
 Weapon_Data g_Weapon[64];
 
 bool g_bBuyZoneOnly = false;
+bool g_bHookBuyZone = true;
 bool g_bAllowLoadout = false;
 bool g_bCommandInitialized = false;
+bool g_bMenuCommandInitialized = false;
+
+char sTag[64];
 
 ConVar g_Cvar_BuyZoneOnly;
+ConVar g_Cvar_Command;
+ConVar g_Cvar_PluginTag;
+ConVar g_Cvar_HookOnBuyZone;
 
 bool g_zombiereloaded = false;
 bool g_zombieriot = false;
 
 public Plugin myinfo = 
 {
-    name = "[CSGO] Gun Menu",
+    name = "[CSGO/CSS] Gun Menu",
 	author = "Oylsister",
-	description = "",
+	description = "Purchase weapon from the menu and create specific command to purchase specific weapon",
 	version = "1.0",
-	url = ""
+	url = "https://github.com/oylsister"
 };
 
 public void OnPluginStart()
 {
-    RegConsoleCmd("sm_gun", Command_GunMenu);
+    g_Cvar_BuyZoneOnly = CreateConVar("sm_gunmenu_buyzoneonly", "0.0", "Only allow to purchase on buyzone only", _, true, 0.0, true, 1.0);
+    g_Cvar_Command = CreateConVar("sm_gunmenu_command", "sm_gun,sm_guns,sm_zmarket,sm_zbuy", "Specific command for open menu command");
+    g_Cvar_PluginTag = CreateConVar("sm_gunmenu_prefix", "[ZBuy]", "Prefix for plugin");
+    g_Cvar_HookOnBuyZone = CreateConVar("sm_gunmenu_hookbuyzone", "1.0", "Also apply purchase method to player purchase with default buy menu from buyzone", _, true, 0.0, true, 1.0);
+
     RegAdminCmd("sm_restrict", Command_Restrict, ADMFLAG_GENERIC);
     RegAdminCmd("sm_unrestrict", Command_Unrestrict, ADMFLAG_GENERIC);
     RegAdminCmd("sm_slot", GetSlotCommand, ADMFLAG_GENERIC);
+    RegAdminCmd("sm_reloadweapon", Command_ReloadConfig, ADMFLAG_CONFIG);
 
-    g_Cvar_BuyZoneOnly = CreateConVar("sm_gunmenu_buyzoneonly", "0.0", "Only allow to purchase on buyzone only", _, true, 0.0, true, 1.0);
-
+    g_bMenuCommandInitialized = false;
     g_bCommandInitialized = false;
+
+    HookConVarChange(g_Cvar_BuyZoneOnly, OnBuyZoneChanged);
+    HookConVarChange(g_Cvar_Command, OnCommandChanged);
+    HookConVarChange(g_Cvar_PluginTag, OnTagChanged);
+    HookConVarChange(g_Cvar_HookOnBuyZone, OnHookBuyZoneChanged);
+
     AutoExecConfig();
 }
 
@@ -107,15 +122,43 @@ public void OnLibraryRemoved(const char[] name)
     }
 }
 
-public void OnMapStart()
+public void OnBuyZoneChanged(ConVar cvar, const char[] newValue, const char[] oldValue)
 {
     g_bBuyZoneOnly = GetConVarBool(g_Cvar_BuyZoneOnly);
 }
 
+public void OnCommandChanged(ConVar cvar, const char[] newValue, const char[] oldValue)
+{
+    g_bMenuCommandInitialized = false;
+    CreateMenuCommand();
+}
+
+public void OnTagChanged(ConVar cvar, const char[] newValue, const char[] oldValue)
+{
+    GetConVarString(g_Cvar_PluginTag, sTag, sizeof(sTag));
+}
+
+public void OnHookBuyZoneChanged(ConVar cvar, const char[] newValue, const char[] oldValue)
+{
+    g_bHookBuyZone = GetConVarBool(g_Cvar_HookOnBuyZone);
+}
+
 public void OnConfigsExecuted()
 {
+    GetConVarString(g_Cvar_PluginTag, sTag, sizeof(sTag));
+    g_bBuyZoneOnly = GetConVarBool(g_Cvar_BuyZoneOnly);
+
+    LoadConfig();
+    CreateMenuCommand();
+    CreateGunCommand();
+}
+
+public Action Command_ReloadConfig(int client, int args)
+{
+    g_bCommandInitialized = false;
     LoadConfig();
     CreateGunCommand();
+    return Plugin_Handled;
 }
 
 void LoadConfig()
@@ -156,6 +199,45 @@ void LoadConfig()
         }
         while(KvGotoNextKey(kv));
     }
+}
+
+void CreateMenuCommand()
+{
+    if(g_bMenuCommandInitialized)
+    {
+        return;
+    }
+
+    char menucommand[128];
+    GetConVarString(g_Cvar_Command, menucommand, sizeof(menucommand));
+
+    if(menucommand[0])
+    {
+        if(FindCharInString(menucommand, ',') != -1)
+        {
+            int idx;
+            int lastidx;
+            while((idx = FindCharInString(menucommand[lastidx], ',')) != -1)
+            {
+                char out[64];
+                char fmt[64];
+                Format(fmt, sizeof(fmt), "%%.%ds", idx);
+                Format(out, sizeof(out), fmt, menucommand[lastidx]);
+                RegConsoleCmd(out, Command_GunMenu);
+                lastidx += ++idx;
+
+                if(FindCharInString(menucommand[lastidx], ',') == -1 && menucommand[lastidx+1] != '\0')
+                {
+                    RegConsoleCmd(menucommand[lastidx], Command_GunMenu);
+                }
+            }
+        }
+        else
+        {
+            RegConsoleCmd(menucommand, Command_GunMenu);
+        }
+    }
+    g_bMenuCommandInitialized = true;
 }
 
 void CreateGunCommand()
@@ -255,31 +337,19 @@ public Action WeaponBuyCommand(int client, int args)
 
 public Action CS_OnBuyCommand(int client, const char[] weapon)
 {
-    if(!IsPlayerAlive(client))
+    if(g_bHookBuyZone)
     {
-        PrintToChat(client, " \x04%s\x01 You must be alive to purchase the weapon.", sTag);
-        return Plugin_Handled;
-    }
-
-    if(g_zombieriot || g_zombiereloaded)
-    {
-        if(ZRiot_IsClientZombie(client))
+        for(int i = 0; i < g_iTotal; i++)
         {
-            PrintToChat(client, " \x04%s\x01 You must be Human to purchase the weapon.", sTag);
-            return Plugin_Handled;
-        }
-    }
+            char reformat[64];
+            Format(reformat, sizeof(reformat), "%s", g_Weapon[i].data_entity);
+            ReplaceString(reformat, sizeof(reformat), "weapon_", "");
 
-    for(int i = 0; i < g_iTotal; i++)
-    {
-        char reformat[64];
-        Format(reformat, sizeof(reformat), "%s", g_Weapon[i].data_entity);
-        ReplaceString(reformat, sizeof(reformat), "weapon_", "");
-
-        if(StrEqual(weapon, reformat, false))
-        {
-            PurchaseWeapon(client, g_Weapon[i].data_entity);
-            break;
+            if(StrEqual(weapon, reformat, false))
+            {
+                PurchaseWeapon(client, g_Weapon[i].data_entity);
+                break;
+            }
         }
     }
     return Plugin_Continue;
