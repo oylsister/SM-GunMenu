@@ -14,6 +14,7 @@
 #define SLOT_GRENADE 3
 #define SLOT_THROWABLE 4
 #define SLOT_FIRE 5
+#define SLOT_KEVLAR 6
 
 enum struct Weapon_Data
 {
@@ -796,6 +797,16 @@ public void PurchaseWeapon(int client, const char[] entity)
             if(g_Weapon[i].data_price > cash)
             {
                 PrintToChat(client, " \x04%s\x01 You don't have enough cash to purchase this item.", sTag);
+                break;
+            }
+
+            if(StrEqual(entity, "weapon_kevlar"))
+            {
+                SetEntProp(client, Prop_Send, "m_ArmorValue", 100);
+                SetEntProp(client, Prop_Send, "m_bHasHelmet", 1);
+                SetEntProp(client, Prop_Send, "m_iAccount", cash - g_Weapon[i].data_price);
+                PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\" \x01. Select weapon from menu or use command to purchase again.", sTag, g_Weapon[i].data_name);
+                
                 break;
             }
 

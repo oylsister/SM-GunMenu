@@ -1,9 +1,336 @@
 "weapons"
 {
-    "AK-47"
-    {
-        "entity"    "weapon_ak47"
-        "price"     "3500"
-        
-    }
+	"Glock"
+	{
+		"entity"    "weapon_glock"
+		"price"     "200"
+		"slot"		"1"
+		"command"	"sm_glock"
+		"restrict"	"0"
+	}
+	"HKP2000"
+	{
+		"entity"    "weapon_hkp2000"
+		"price"     "300"
+		"slot"		"1"
+		"command"	"sm_p2000"
+		"restrict"	"0"
+	}
+	"USP"
+	{
+		"entity"    "weapon_usp_silencer"
+		"price"     "300"
+		"slot"		"1"
+		"command"	"sm_usp"
+		"restrict"	"0"
+	}
+	"Elite"
+	{
+		"entity"    "weapon_elite"
+		"price"     "300"
+		"slot"		"1"
+		"command"	"sm_elite"
+		"restrict"	"0"
+	}
+	"P250"
+	{
+		"entity"    "weapon_p250"
+		"price"     "500"
+		"slot"		"1"
+		"command"	"sm_p250"
+		"restrict"	"0"
+	}
+	"CZ95"
+	{
+		"entity"    "weapon_cz75a"
+		"price"     "800"
+		"slot"		"1"
+		"command"	"sm_cz,sm_cz75"
+		"restrict"	"0"
+	}
+	"Fiveseven"
+	{
+		"entity"    "weapon_fiveseven"
+		"price"     "800"
+		"slot"		"1"
+		"command"	"sm_57,sm_fiveseven"
+		"restrict"	"0"
+	}
+	"Tec9"
+	{
+		"entity"    "weapon_tec9"
+		"price"     "800"
+		"slot"		"1"
+		"command"	"sm_tec9"
+		"restrict"	"0"
+	}
+	"Deagle"
+	{
+		"entity"    "weapon_deagle"
+		"price"     "800"
+		"slot"		"1"
+		"command"	"sm_deagle"
+		"restrict"	"0"
+	}
+	"Revolver"
+	{
+		"entity"    "weapon_revolver"
+		"price"     "800"
+		"slot"		"1"
+		"command"	"sm_revolver,sm_r8"
+		"restrict"	"0"
+	}
+	
+	// Primary
+	"M249"
+	{
+		"entity"    "weapon_m249"
+		"price"     "5000"
+		"slot"		"0"
+		"command"	"sm_m249"
+		"restrict"	"0"
+	}
+	"Negev"
+	{
+		"entity"    "weapon_negev"
+		"price"     "1800"
+		"slot"		"0"
+		"command"	"sm_negev"
+		"restrict"	"0"
+	}
+	"AK47"
+	{
+		"entity"    "weapon_ak47"
+		"price"     "2700"
+		"slot"		"0"
+		"command"	"sm_ak,sm_ak47"
+		"restrict"	"0"
+	}
+	"M4A1-S"
+	{
+		"entity"    "weapon_m4a1_silencer"
+		"price"     "3100"
+		"slot"		"0"
+		"command"	"sm_m4a1s,sm_m4s"
+		"restrict"	"0"
+	}
+	"M4A4"
+	{
+		"entity"    "weapon_m4a1"
+		"price"     "3000"
+		"slot"		"0"
+		"command"	"sm_m4a4"
+		"restrict"	"0"
+	}
+	"P90"
+	{
+		"entity"    "weapon_p90"
+		"price"     "2350"
+		"slot"		"0"
+		"command"	"sm_p90"
+		"restrict"	"0"
+	}
+	"Bizon"
+	{
+		"entity"	"weapon_bizon"
+		"price"		"1600"
+		"slot"		"0"
+		"command"	"sm_bizon,sm_pp"
+		"restrict"	"0"
+	
+	}
+	"AUG"
+	{
+		"entity"    "weapon_aug"
+		"price"     "3300"
+		"slot"		"0"
+		"command"	"sm_aug"
+		"restrict"	"0"
+	}
+	"SG556"
+	{
+		"entity"    "weapon_sg556"
+		"price"     "3300"
+		"slot"		"0"
+		"command"	"sm_sg556"
+		"restrict"	"0"
+	}
+	"Nova"
+	{
+		"entity"    "weapon_nova"
+		"price"     "1200"
+		"slot"		"0"
+		"command"	"sm_nova"
+		"restrict"	"0"
+	}
+	"XM1014"
+	{
+		"entity"    "weapon_xm1014"
+		"price"     "2000"
+		"slot"		"0"
+		"command"	"sm_xm1014,sm_xm10"
+		"restrict"	"0"
+	}
+	"Mag7"
+	{
+		"entity"    "weapon_mag7"
+		"price"     "1800"
+		"slot"		"0"
+		"command"	"sm_mag7"
+		"restrict"	"0"
+	}
+	"Sawed-off"
+	{
+		"entity"    "weapon_sawedoff"
+		"price"     "1200"
+		"slot"		"0"
+		"command"	"sm_sawedoff"
+		"restrict"	"0"
+	}
+	"Mac10"
+	{
+		"entity"    "weapon_mac10"
+		"price"     "1000"
+		"slot"		"0"
+		"command"	"sm_mac10"
+		"restrict"	"0"
+	}
+	"MP9"
+	{
+		"entity"    "weapon_mp9"
+		"price"     "1200"
+		"slot"		"0"
+		"command"	"sm_mp9"
+		"restrict"	"0"
+	}
+	"UMP45"
+	{
+		"entity"    "weapon_ump45"
+		"price"     "1300"
+		"slot"		"0"
+		"command"	"sm_ump,sm_ump45"
+		"restrict"	"0"
+	}
+	"MP7"
+	{
+		"entity"    "weapon_mp7"
+		"price"     "1700"
+		"slot"		"0"
+		"command"	"sm_mp7"
+		"restrict"	"0"
+	}
+	"MP5SD"
+	{
+		"entity"    "weapon_mp5sd"
+		"price"     "1200"
+		"slot"		"0"
+		"command"	"sm_mp5"
+		"restrict"	"0"
+	}
+	"Famas"
+	{
+		"entity"    "weapon_famas"
+		"price"     "2500"
+		"slot"		"0"
+		"command"	"sm_famas"
+		"restrict"	"0"
+	}
+	"Galil-AR"
+	{
+		"entity"    "weapon_galilar"
+		"price"     "2300"
+		"slot"		"0"
+		"command"	"sm_galil"
+		"restrict"	"0"
+	}
+	"SSG08"
+	{
+		"entity"    "weapon_ssg08"
+		"price"     "1500"
+		"slot"		"0"
+		"command"	"sm_ssg08,sm_scout"
+		"restrict"	"0"
+	}
+	"AWP"
+	{
+		"entity"    "weapon_awp"
+		"price"     "4750"
+		"slot"		"0"
+		"command"	"sm_awp"
+		"restrict"	"0"
+	}
+	"Scar-20"
+	{
+		"entity"    "weapon_scar20"
+		"price"     "5000"
+		"slot"		"0"
+		"command"	"sm_scar,sm_scar20"
+		"restrict"	"0"
+	}
+	"G3SG1"
+	{
+		"entity"    "weapon_g3sg1"
+		"price"     "1200"
+		"slot"		"0"
+		"command"	"sm_g3sg1"
+		"restrict"	"0"
+	}
+	
+	// Grenade
+	"HEGrenade"
+	{
+		"entity"    "weapon_hegrenade"
+		"price"     "1000"
+		"slot"		"3"
+		"command"	"sm_he"
+		"restrict"	"0"
+	}
+	"IncGrenade"
+	{
+		"entity"    "weapon_incgrenade"
+		"price"     "1500"
+		"slot"		"5"
+		"command"	"sm_inc"
+		"restrict"	"0"
+	}
+	"Molotov"
+	{
+		"entity"    "weapon_molotov"
+		"price"     "1200"
+		"slot"		"5"
+		"command"	"sm_molotov,sm_molo,sm_mol"
+		"restrict"	"0"
+	}
+	"Decoy"
+	{
+		"entity"    "weapon_decoy"
+		"price"     "1200"
+		"slot"		"4"
+		"command"	"sm_decoy"
+		"restrict"	"1"
+	}
+	"Flashbang"
+	{
+		"entity"    "weapon_flashbang"
+		"price"     "800"
+		"slot"		"4"
+		"command"	"sm_flash"
+		"restrict"	"1"
+	}
+	"Smokegrenade"
+	{
+		"entity"    "weapon_smokegrenade"
+		"price"     "1200"
+		"slot"		"4"
+		"command"	"sm_smoke"
+		"restrict"	"1"
+	}
+	"Kevlar"
+	{
+		"entity"    "weapon_kevlar"
+		"price"     "1000"
+		"slot"		"6"
+		"command"	"sm_kev,sm_kevlar"
+		"restrict"	"0"
+	}
 }
