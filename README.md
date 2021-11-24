@@ -32,7 +32,8 @@ sm_gunmenu_hookbuyzone "1.0"
 // Prefix for plugin
 // -
 // Default: "[ZBuy]"
-sm_gunmenu_prefix "[ZBuy]"```
+sm_gunmenu_prefix "[ZBuy]"
+```
 
 ## Example Config
 ```
