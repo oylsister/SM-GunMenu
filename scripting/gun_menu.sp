@@ -3,9 +3,17 @@
 #include <sourcemod>
 #include <cstrike>
 #include <sdktools>
-#include <zriot>
 #include <clientprefs>
-//#include <zombiereloaded>
+
+#define ZRIOT //You can add '//' on this if you're not gonna use for Zriot or Zombie:Reloaded
+
+#if defined ZRIOT
+#include <zriot>
+#endif
+
+#if defined ZOMBIERELOADED
+#include <zombiereloaded>
+#endif
 
 #pragma newdecls required
 
@@ -33,7 +41,7 @@ Weapon_Data g_Weapon[64];
 
 bool g_bBuyZoneOnly = false;
 bool g_bHookBuyZone = true;
-bool g_bAllowLoadout = false;
+bool g_bAllowLoadout = true;
 bool g_bCommandInitialized = false;
 bool g_bMenuCommandInitialized = false;
 
@@ -43,9 +51,6 @@ ConVar g_Cvar_BuyZoneOnly;
 ConVar g_Cvar_Command;
 ConVar g_Cvar_PluginTag;
 ConVar g_Cvar_HookOnBuyZone;
-
-bool g_zombiereloaded = false;
-bool g_zombieriot = false;
 
 // Client Preferences
 Handle g_hWeaponCookies[WEAPON_SLOT_MAX] = INVALID_HANDLE;
@@ -76,6 +81,8 @@ public void OnPluginStart()
 
     g_bMenuCommandInitialized = false;
     g_bCommandInitialized = false;
+
+    HookEvent("player_spawn", OnPlayerSpawn);
 
     HookConVarChange(g_Cvar_BuyZoneOnly, OnBuyZoneChanged);
     HookConVarChange(g_Cvar_Command, OnCommandChanged);
@@ -110,51 +117,6 @@ public void OnPluginStart()
     }
 
     AutoExecConfig();
-}
-
-public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
-{
-    MarkNativeAsOptional("ZR_IsClientZombie");
-    MarkNativeAsOptional("ZRiot_IsClientZombie");
-
-    return APLRes_Success;
-}
-
-public void OnAllPluginsLoaded()
-{
-    if(LibraryExists("zombiereloaded"))
-    {
-        g_zombiereloaded = true;
-    }
-    
-    if(LibraryExists("zombieriot"))
-    {
-        g_zombieriot = true;
-    }
-}
-
-public void OnLibraryAdded(const char[] name)
-{
-    if(StrEqual(name, "zombiereloaded", false))
-    {
-        g_zombiereloaded = true;
-    }
-    if(StrEqual(name, "zombieriot", false))
-    {
-        g_zombieriot = true;
-    }
-}
-
-public void OnLibraryRemoved(const char[] name)
-{
-    if(StrEqual(name, "zombiereloaded", false))
-    {
-        g_zombiereloaded = true;
-    }
-    if(StrEqual(name, "zombieriot", false))
-    {
-        g_zombieriot = true;
-    }
 }
 
 public void OnBuyZoneChanged(ConVar cvar, const char[] newValue, const char[] oldValue)
@@ -435,6 +397,15 @@ public Action CS_OnBuyCommand(int client, const char[] weapon)
         }
     }
     return Plugin_Continue;
+}
+
+public void OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
+{
+    int client = GetClientOfUserId(GetEventInt(event, "userid"));
+    if(g_bAutoRebuy[client])
+    {
+        BuySavedLoadout(client, true);
+    }
 }
 
 public Action Command_Restrict(int client, int args)
@@ -805,14 +776,21 @@ public void PurchaseWeapon(int client, const char[] entity)
         return;
     }
 
-    if(g_zombieriot || g_zombiereloaded)
+    #if defined ZRIOT
+    if(ZRiot_IsClientZombie(client))
     {
-        if(ZRiot_IsClientZombie(client))
-        {
-            PrintToChat(client, " \x04%s\x01 You must be Human to purchase the weapon.", sTag);
-            return;
-        }
+        PrintToChat(client, " \x04%s\x01 You must be Human to purchase the weapon.", sTag);
+        return;
     }
+    #endif
+
+    #if defined ZOMBIERELOADED
+    if(ZR_IsClientZombie(client))
+    {
+        PrintToChat(client, " \x04%s\x01 You must be Human to purchase the weapon.", sTag);
+        return;
+    }
+    #endif
 
     if(g_bBuyZoneOnly && !IsClientInBuyZone(client))
     {
@@ -873,7 +851,7 @@ public void ClientLoadoutMenu(int client)
     menu.AddItem("save", "Save Current Loadout");
     menu.AddItem("edit", "Edit Your Loadout");
     menu.AddItem("buy", "Buy Saved Loadout");
-    menu.AddItem("toggle", "Auto-Rebuy");
+    menu.AddItem("Auto-Rebuy", "Auto-Rebuy");
 
     menu.ExitBackButton = true;
     menu.ExitButton = true;
@@ -888,17 +866,17 @@ public int ClientLoadoutMenuHandler(Menu menu, MenuAction action, int param1, in
         {
             char info[64];
             menu.GetItem(param2, info, sizeof(info));
-            if(StrEqual(info, "toggle", false))
+            if(StrEqual(info, "Auto-Rebuy", false))
             {
                 char display[64];
                 if(!g_bAutoRebuy[param1])
                 {
-                    Format(display, sizeof(display), "%s: No");
+                    Format(display, sizeof(display), "%s: No", info);
                     RedrawMenuItem(display);
                 }
                 else
                 {
-                    Format(display, sizeof(display), "%s: Yes");
+                    Format(display, sizeof(display), "%s: Yes", info);
                     RedrawMenuItem(display);
                 }
             }
@@ -917,11 +895,26 @@ public int ClientLoadoutMenuHandler(Menu menu, MenuAction action, int param1, in
             }
             else if(StrEqual(info, "buy", false))
             {
-                BuySavedLoadout(param1);
+                BuySavedLoadout(param1, false);
             }
             else if(StrEqual(info, "edit", false))
             {
                 EditLoadout(param1);
+            }
+            else if(StrEqual(info, "Auto-Rebuy", false))
+            {
+                g_bAutoRebuy[param1] = !g_bAutoRebuy[param1];
+                SaveRebuyCookie(param1);
+
+                if(g_bAutoRebuy[param1])
+                {
+                    PrintToChat(param1, " \x04%s\x01 You have \x06enabled\x01 Auto-Rebuy, Next spawn you will purchase loadout weapon automatically.", sTag);
+                }
+                else
+                {
+                    PrintToChat(param1, " \x04%s\x01 You have \x06disabled\x01 Auto-Rebuy, Next spawn you will purchase loadout weapon automatically.", sTag);
+                }
+                ClientLoadoutMenu(param1);
             }
         }
         case MenuAction_Cancel:
@@ -959,13 +952,18 @@ void SaveCurrentLoadout(int client, int slot)
     }
 }
 
-void BuySavedLoadout(int client)
+void BuySavedLoadout(int client, bool spawn)
 {
     for(int i = 0; i < WEAPON_SLOT_MAX; i++)
     {
         char weaponentity[64];
         int weapon = GetPlayerWeaponSlot(client, i);
-        GetEdictClassname(weapon, weaponentity, sizeof(weaponentity));
+
+        if(weapon != -1)
+        {
+            GetEntityClassname(weapon, weaponentity, sizeof(weaponentity));
+            //PrintToChat(client, " \x04[Debug]\x01 Found %s", weaponentity);
+        }
 
         char weaponname[64];
         GetClientCookie(client, g_hWeaponCookies[i], weaponname, sizeof(weaponname));
@@ -978,8 +976,19 @@ void BuySavedLoadout(int client)
         {
             if(StrEqual(weaponname, g_Weapon[x].data_name, false))
             {
-                PurchaseWeapon(client, g_Weapon[x].data_entity);
-                break;
+                if(spawn)
+                {
+                    if(!StrEqual(weaponentity, g_Weapon[x].data_entity))
+                    {
+                        PurchaseWeapon(client, g_Weapon[x].data_entity);
+                        break;
+                    }
+                }
+                else
+                {
+                    PurchaseWeapon(client, g_Weapon[x].data_entity);
+                    break;
+                }
             }
         }
     }
@@ -989,9 +998,9 @@ void EditLoadout(int client)
 {
     Menu menu = new Menu(EditLoadoutHandler, MENU_ACTIONS_ALL);
     menu.SetTitle("%s Edit Loadout Option \nChoose the option to changed it.", sTag);
-    menu.AddItem("primary", "Primary");
-    menu.AddItem("secondary", "Secondary");
-    menu.AddItem("grenade", "Grennde");
+    menu.AddItem("Primary", "Primary");
+    menu.AddItem("Secondary", "Secondary");
+    menu.AddItem("Grenade", "Grenade");
 
     menu.ExitBackButton = true;
     menu.ExitButton = true;
@@ -1009,7 +1018,7 @@ public int EditLoadoutHandler(Menu menu, MenuAction action, int param1, int para
             char display[64];
             menu.GetItem(param2, info, sizeof(info));
 
-            if(StrEqual(info, "primary", false))
+            if(StrEqual(info, "Primary", false))
             {
                 GetClientCookie(param1, g_hWeaponCookies[SLOT_PRIMARY], weaponname, sizeof(weaponname));
                 if(weaponname[0] == '\0')
@@ -1023,7 +1032,7 @@ public int EditLoadoutHandler(Menu menu, MenuAction action, int param1, int para
                     RedrawMenuItem(display);
                 }
             }
-            else if(StrEqual(info, "secondary", false))
+            else if(StrEqual(info, "Secondary", false))
             {
                 GetClientCookie(param1, g_hWeaponCookies[SLOT_SECONDARY], weaponname, sizeof(weaponname));
                 if(weaponname[0] == '\0')
@@ -1037,7 +1046,7 @@ public int EditLoadoutHandler(Menu menu, MenuAction action, int param1, int para
                     RedrawMenuItem(display);
                 }
             }
-            if(StrEqual(info, "grenade", false))
+            if(StrEqual(info, "Grenade", false))
             {
                 GetClientCookie(param1, g_hWeaponCookies[SLOT_GRENADE], weaponname, sizeof(weaponname));
                 if(weaponname[0] == '\0')
@@ -1057,15 +1066,15 @@ public int EditLoadoutHandler(Menu menu, MenuAction action, int param1, int para
             char info[64];
             menu.GetItem(param2, info, sizeof(info));
 
-            if(StrEqual(info, "primary", false))
+            if(StrEqual(info, "Primary", false))
             {
                 ChooseLoadout(param1, SLOT_PRIMARY);
             }
-            else if(StrEqual(info, "secondary", false))
+            else if(StrEqual(info, "Secondary", false))
             {
                 ChooseLoadout(param1, SLOT_SECONDARY);
             }
-            else if(StrEqual(info, "grenade", false))
+            else if(StrEqual(info, "Grenade", false))
             {
                 ChooseLoadout(param1, SLOT_GRENADE);
             }
@@ -1149,7 +1158,27 @@ public int ChooseLoadoutHandler(Menu menu, MenuAction action, int param1, int pa
         }
         case MenuAction_DisplayItem:
         {
-            
+            char info[64];
+            char cookie[64];
+            char display[64];
+            menu.GetItem(param2, info, sizeof(info));
+            GetClientCookie(param1, g_hWeaponCookies[currentslot], cookie, sizeof(cookie));
+            if(StrEqual(info, "none", false))
+            {
+                if(cookie[0] == '\0')
+                {
+                    Format(display, sizeof(display), "%s (Selected)", info);
+                    return RedrawMenuItem(display);
+                }
+            }
+            else
+            {
+                if(StrEqual(cookie, info, false))
+                {
+                    Format(display, sizeof(display), "%s (Selected)", info);
+                    return RedrawMenuItem(display);
+                }
+            }
         }
         case MenuAction_Select:
         {
@@ -1183,9 +1212,9 @@ public void ServerSettingMenu(int client)
 {
     Menu menu = new Menu(ServerSettingMenuHandler, MENU_ACTIONS_ALL);
     menu.SetTitle("%s Setting Menu", sTag);
-    menu.AddItem("buyzone", "BuyZone Only");
+    menu.AddItem("BuyZone Only", "BuyZone Only");
     menu.AddItem("restrict", "Restrict Weapon");
-    menu.AddItem("loadout", "Allow Loadout");
+    menu.AddItem("Allow Loadout", "Allow Loadout");
 
     menu.ExitBackButton = true;
     menu.ExitButton = true;
@@ -1196,37 +1225,35 @@ public int ServerSettingMenuHandler(Menu menu, MenuAction action, int param1, in
 {
     switch(action)
     {
-        case MenuAction_DrawItem:
-        {
-            char info[64];
-            menu.GetItem(param2, info, sizeof(info));
-
-            if(StrEqual(info, "loadout"))
-            {
-                return ITEMDRAW_DISABLED;
-            }
-        }
         case MenuAction_DisplayItem:
         {
             char info[64];
             char display[64];
             menu.GetItem(param2, info, sizeof(info));
 
-            if(StrEqual(info, "loadout"))
+            if(StrEqual(info, "Allow Loadout"))
             {
-                Format(display, sizeof(display), "%s (unavailable)", info);
-                return RedrawMenuItem(display);
-            }
-            else if(StrEqual(info, "buyzone"))
-            {
-                if(!g_bBuyZoneOnly)
+                if(g_bAllowLoadout)
                 {
-                    Format(display, sizeof(display), "%s: False", info);
+                    Format(display, sizeof(display), "%s: Yes", info);
                     return RedrawMenuItem(display);
                 }
                 else
                 {
-                    Format(display, sizeof(display), "%s: True", info);
+                    Format(display, sizeof(display), "%s: No", info);
+                    return RedrawMenuItem(display);
+                }
+            }
+            else if(StrEqual(info, "BuyZone Only"))
+            {
+                if(!g_bBuyZoneOnly)
+                {
+                    Format(display, sizeof(display), "%s: No", info);
+                    return RedrawMenuItem(display);
+                }
+                else
+                {
+                    Format(display, sizeof(display), "%s: Yes", info);
                     return RedrawMenuItem(display);
                 }
             }
@@ -1236,7 +1263,7 @@ public int ServerSettingMenuHandler(Menu menu, MenuAction action, int param1, in
             char info[64];
             menu.GetItem(param2, info, sizeof(info));
 
-            if(StrEqual(info, "buyzone"))
+            if(StrEqual(info, "BuyZone Only"))
             {
                 g_bBuyZoneOnly = !g_bBuyZoneOnly;
                 if(g_bBuyZoneOnly == true)
@@ -1248,6 +1275,20 @@ public int ServerSettingMenuHandler(Menu menu, MenuAction action, int param1, in
                     PrintToChatAll(" \x04%s\x01 Purchase weapon in Buyzone-only has been \x06disabled\x01.", sTag);
                 }
                 ServerSettingMenu(param1);
+            }
+            else if(StrEqual(info, "Allow Loadout"))
+            {
+                g_bAllowLoadout = !g_bAllowLoadout;
+                if(g_bAllowLoadout == true)
+                {
+                    PrintToChatAll(" \x04%s\x01 Weapon Loadout has been \x07enabled\x01.", sTag);
+                }
+                else
+                {
+                    PrintToChatAll(" \x04%s\x01 Weapon Loadout has been \x06disabled\x01.", sTag);
+                }
+                ServerSettingMenu(param1);
+
             }
             else if(StrEqual(info, "restrict"))
             {
