@@ -4,6 +4,7 @@
 #include <cstrike>
 #include <sdktools>
 #include <zriot>
+#include <clientprefs>
 //#include <zombiereloaded>
 
 #pragma newdecls required
@@ -12,9 +13,9 @@
 #define SLOT_SECONDARY 1
 #define SLOT_KNIFE 2
 #define SLOT_GRENADE 3
-#define SLOT_THROWABLE 4
-#define SLOT_FIRE 5
-#define SLOT_KEVLAR 6
+#define SLOT_KEVLAR 4
+
+#define WEAPON_SLOT_MAX 3
 
 enum struct Weapon_Data
 {
@@ -46,6 +47,12 @@ ConVar g_Cvar_HookOnBuyZone;
 bool g_zombiereloaded = false;
 bool g_zombieriot = false;
 
+// Client Preferences
+Handle g_hWeaponCookies[WEAPON_SLOT_MAX] = INVALID_HANDLE;
+Handle g_hRebuyCookies = INVALID_HANDLE;
+
+bool g_bAutoRebuy[MAXPLAYERS+1];
+
 public Plugin myinfo = 
 {
     name = "[CSGO/CSS] Gun Menu",
@@ -74,6 +81,33 @@ public void OnPluginStart()
     HookConVarChange(g_Cvar_Command, OnCommandChanged);
     HookConVarChange(g_Cvar_PluginTag, OnTagChanged);
     HookConVarChange(g_Cvar_HookOnBuyZone, OnHookBuyZoneChanged);
+
+    if(g_hRebuyCookies == INVALID_HANDLE)
+    {
+        g_hRebuyCookies = RegClientCookie("gunmenu_autorebuy", "Toggle Auto Rebuy", CookieAccess_Protected);
+    }
+
+    for(int i = 0; i < WEAPON_SLOT_MAX; i++)
+    {
+        if(g_hWeaponCookies[i] == INVALID_HANDLE)
+        {
+            char cookiename[64];
+            char cookiedesc[64];
+
+            Format(cookiename, sizeof(cookiename), "gunmenu_loadoutslot_%d", i);
+            Format(cookiedesc, sizeof(cookiedesc), "Client Loadout Slot %d", i);
+
+            g_hWeaponCookies[i] = RegClientCookie(cookiename, cookiedesc, CookieAccess_Protected);
+        }
+    }
+
+    for(int i = 1; i <= MaxClients; i++)
+    {
+        if(AreClientCookiesCached(i))
+        {
+            OnClientCookiesCached(i);
+        }
+    }
 
     AutoExecConfig();
 }
@@ -142,6 +176,53 @@ public void OnTagChanged(ConVar cvar, const char[] newValue, const char[] oldVal
 public void OnHookBuyZoneChanged(ConVar cvar, const char[] newValue, const char[] oldValue)
 {
     g_bHookBuyZone = GetConVarBool(g_Cvar_HookOnBuyZone);
+}
+
+public void OnClientCookiesCached(int client)
+{
+    char sBuffer[32];
+    GetClientCookie(client, g_hRebuyCookies, sBuffer, sizeof(sBuffer));
+
+    if(sBuffer[0] != '\0')
+    {
+        g_bAutoRebuy[client] = view_as<bool>(StringToInt(sBuffer));
+    }
+    else
+    {
+        g_bAutoRebuy[client] = false;
+        SaveRebuyCookie(client);
+    }
+
+    for(int i = 0; i < WEAPON_SLOT_MAX; i++)
+    {
+        char sBuffer2[32];
+        GetClientCookie(client, g_hWeaponCookies[i], sBuffer2, sizeof(sBuffer2));
+
+        if(sBuffer2[0] == '\0')
+        {
+            Format(sBuffer2, sizeof(sBuffer2), "");
+            SaveLoadoutCookie(client, i, sBuffer2);
+        }
+    }
+}
+
+void SaveRebuyCookie(int client)
+{
+    char sCookie[32];
+    FormatEx(sCookie, sizeof(sCookie), "%b", g_bAutoRebuy[client]);
+    SetClientCookie(client, g_hRebuyCookies, sCookie);
+}
+
+void SaveLoadoutCookie(int client, int weaponslot, const char[] weaponname)
+{
+    for(int i = 0; i < WEAPON_SLOT_MAX; i++)
+    {
+        if(weaponslot == i)
+        {
+            SetClientCookie(client, g_hWeaponCookies[i], weaponname);
+            break;
+        }
+    }
 }
 
 public void OnConfigsExecuted()
@@ -599,17 +680,9 @@ public int WeaponTypeMenuHandler(Menu menu, MenuAction action, int param1, int p
                 {
                     SecondaryMenu(param1);
                 }
-                else if(StrEqual(info, "grenade"))
-                {
-                    GrenadeMenu(param1);
-                }
-                else if(StrEqual(info, "throwable"))
-                {
-                    ThrowableMenu(param1);
-                }
                 else
                 {
-                    FireGrenadeMenu(param1);
+                    GrenadeMenu(param1);
                 }
             }
         }
@@ -668,42 +741,6 @@ public void GrenadeMenu(int client)
     for (int i = 0; i < g_iTotal; i++)
     {
         if(g_Weapon[i].data_slot == SLOT_GRENADE)
-        {
-            char choice[64];
-            Format(choice, sizeof(choice), "%s - (%d$)", g_Weapon[i].data_name, g_Weapon[i].data_price);
-            menu.AddItem(g_Weapon[i].data_name, choice);
-        }
-    }
-    menu.ExitBackButton = true;
-    menu.ExitButton = true;
-    menu.Display(client, MENU_TIME_FOREVER);
-}
-
-public void ThrowableMenu(int client)
-{
-    Menu menu = new Menu(SelectMenuHandler, MENU_ACTIONS_ALL);
-    menu.SetTitle("%s Throwable Grenade", sTag);
-    for (int i = 0; i < g_iTotal; i++)
-    {
-        if(g_Weapon[i].data_slot == SLOT_THROWABLE)
-        {
-            char choice[64];
-            Format(choice, sizeof(choice), "%s - (%d$)", g_Weapon[i].data_name, g_Weapon[i].data_price);
-            menu.AddItem(g_Weapon[i].data_name, choice);
-        }
-    }
-    menu.ExitBackButton = true;
-    menu.ExitButton = true;
-    menu.Display(client, MENU_TIME_FOREVER);
-}
-
-public void FireGrenadeMenu(int client)
-{
-    Menu menu = new Menu(SelectMenuHandler, MENU_ACTIONS_ALL);
-    menu.SetTitle("%s Fire Grenade", sTag);
-    for (int i = 0; i < g_iTotal; i++)
-    {
-        if(g_Weapon[i].data_slot == SLOT_FIRE)
         {
             char choice[64];
             Format(choice, sizeof(choice), "%s - (%d$)", g_Weapon[i].data_name, g_Weapon[i].data_price);
@@ -813,17 +850,12 @@ public void PurchaseWeapon(int client, const char[] entity)
             int weapon = GetPlayerWeaponSlot(client, g_Weapon[i].data_slot);
             int slot = g_Weapon[i].data_slot;
 
-            if(slot != SLOT_KNIFE || slot != SLOT_GRENADE || slot != SLOT_THROWABLE || slot != SLOT_FIRE)
+            if(slot != SLOT_KNIFE || slot != SLOT_GRENADE)
             {
                 if(weapon != -1)
                 {
                     CS_DropWeapon(client, weapon, true, false);
                 }
-            }
-
-            else if(slot == SLOT_THROWABLE || slot == SLOT_FIRE)
-            {
-                slot = SLOT_GRENADE;
             }
 
             SetEntProp(client, Prop_Send, "m_iAccount", cash - g_Weapon[i].data_price);
@@ -836,7 +868,112 @@ public void PurchaseWeapon(int client, const char[] entity)
 
 public void ClientLoadoutMenu(int client)
 {
+    Menu menu = new Menu(ClientLoadoutMenuHandler, MENU_ACTIONS_ALL);
+    menu.SetTitle("%s Loadout Menu", sTag);
+    menu.AddItem("save", "Save Current Loadout");
+    menu.AddItem("edit", "Edit Your Loadout");
+    menu.AddItem("buy", "Buy Saved Loadout");
+    menu.AddItem("toggle", "Auto-Rebuy");
 
+    menu.ExitBackButton = true;
+    menu.ExitButton = true;
+    menu.Display(client, MENU_TIME_FOREVER);
+}
+
+public int ClientLoadoutMenuHandler(Menu menu, MenuAction action, int param1, int param2)
+{
+    switch(action)
+    {
+        case MenuAction_DisplayItem:
+        {
+            char info[64];
+            menu.GetItem(param2, info, sizeof(info));
+            if(StrEqual(info, "toggle", false))
+            {
+                char display[64];
+                if(!g_bAutoRebuy[param1])
+                {
+                    Format(display, sizeof(display), "%s: No");
+                    RedrawMenuItem(display);
+                }
+                else
+                {
+                    Format(display, sizeof(display), "%s: Yes");
+                    RedrawMenuItem(display);
+                }
+            }
+        }
+        case MenuAction_Select:
+        {
+            char info[64];
+            menu.GetItem(param2, info, sizeof(info));
+            if(StrEqual(info, "save", false))
+            {
+                for(int i = 0; i < WEAPON_SLOT_MAX; i++)
+                {
+                    SaveCurrentLoadout(param1, i);
+                }
+                ClientLoadoutMenu(param1);
+            }
+            else if(StrEqual(info, "buy", false))
+            {
+                BuySavedLoadout(param1);
+            }
+            else if(StrEqual(info, "edit", false))
+            {
+                
+            }
+        }
+    }
+}
+
+void SaveCurrentLoadout(int client, int slot)
+{
+    if(slot == SLOT_KNIFE || slot == SLOT_KEVLAR)
+    {
+        return;
+    }
+
+    char weaponentity[64];
+    int weapon = GetPlayerWeaponSlot(client, slot);
+    GetEdictClassname(weapon, weaponentity, sizeof(weaponentity));
+
+    for(int i = 0; i < g_iTotal; i++)
+    {
+        if(StrEqual(weaponentity, g_Weapon[i].data_entity, false))
+        {
+            char weaponname[64];
+            Format(weaponname, sizeof(weaponname), "%s", g_Weapon[i].data_name);
+            SaveLoadoutCookie(client, i, weaponname);
+            break;
+        }
+    }
+}
+
+void BuySavedLoadout(int client)
+{
+    for(int i = 0; i < WEAPON_SLOT_MAX; i++)
+    {
+        char weaponentity[64];
+        int weapon = GetPlayerWeaponSlot(client, i);
+        GetEdictClassname(weapon, weaponentity, sizeof(weaponentity));
+
+        char weaponname[64];
+        GetClientCookie(client, g_hWeaponCookies[i], weaponname, sizeof(weaponname));
+
+        if(weaponname[0] == '\0')
+        {
+            continue;
+        }
+        for(int x = 0; x < g_iTotal; x++)
+        {
+            if(StrEqual(weaponname, g_Weapon[x].data_name, false))
+            {
+                PurchaseWeapon(client, g_Weapon[x].data_entity);
+                break;
+            }
+        }
+    }
 }
 
 public void ServerSettingMenu(int client)
@@ -899,6 +1036,14 @@ public int ServerSettingMenuHandler(Menu menu, MenuAction action, int param1, in
             if(StrEqual(info, "buyzone"))
             {
                 g_bBuyZoneOnly = !g_bBuyZoneOnly;
+                if(g_bBuyZoneOnly == true)
+                {
+                    PrintToChatAll(" \x04%s\x01 Purchase weapon in Buyzone-only has been \x07enabled\x01.", sTag);
+                }
+                else
+                {
+                    PrintToChatAll(" \x04%s\x01 Purchase weapon in Buyzone-only has been \x06disabled\x01.", sTag);
+                }
                 ServerSettingMenu(param1);
             }
             else if(StrEqual(info, "restrict"))
@@ -949,17 +1094,9 @@ public int RestrictTypeMenuHandler(Menu menu, MenuAction action, int param1, int
                 {
                     RestrictSecondaryMenu(param1);
                 }
-                else if(StrEqual(info, "grenade"))
-                {
-                    RestrictGrenadeMenu(param1);
-                }
-                else if(StrEqual(info, "throwable"))
-                {
-                    RestrictThrowableMenu(param1);
-                }
                 else
                 {
-                    RestrictFireGrenadeMenu(param1);
+                    RestrictGrenadeMenu(param1);
                 }
             }
         }
@@ -1018,42 +1155,6 @@ public void RestrictGrenadeMenu(int client)
     for (int i = 0; i < g_iTotal; i++)
     {
         if(g_Weapon[i].data_slot == SLOT_GRENADE)
-        {
-            char choice[64];
-            Format(choice, sizeof(choice), "%s", g_Weapon[i].data_name);
-            menu.AddItem(g_Weapon[i].data_name, choice);
-        }
-    }
-    menu.ExitBackButton = true;
-    menu.ExitButton = true;
-    menu.Display(client, MENU_TIME_FOREVER);
-}
-
-public void RestrictThrowableMenu(int client)
-{
-    Menu menu = new Menu(SelectRestrictMenuHandler, MENU_ACTIONS_ALL);
-    menu.SetTitle("%s Throwable Grenade", sTag);
-    for (int i = 0; i < g_iTotal; i++)
-    {
-        if(g_Weapon[i].data_slot == SLOT_THROWABLE)
-        {
-            char choice[64];
-            Format(choice, sizeof(choice), "%s", g_Weapon[i].data_name);
-            menu.AddItem(g_Weapon[i].data_name, choice);
-        }
-    }
-    menu.ExitBackButton = true;
-    menu.ExitButton = true;
-    menu.Display(client, MENU_TIME_FOREVER);
-}
-
-public void RestrictFireGrenadeMenu(int client)
-{
-    Menu menu = new Menu(SelectRestrictMenuHandler, MENU_ACTIONS_ALL);
-    menu.SetTitle("%s Fire Grenade", sTag);
-    for (int i = 0; i < g_iTotal; i++)
-    {
-        if(g_Weapon[i].data_slot == SLOT_FIRE)
         {
             char choice[64];
             Format(choice, sizeof(choice), "%s", g_Weapon[i].data_name);
