@@ -3,6 +3,7 @@
 #include <sourcemod>
 #include <cstrike>
 #include <sdktools>
+#include <sdkhooks>
 #include <clientprefs>
 
 #define ZRIOT //You can add '//' on this if you're not gonna use for Zriot or Zombie:Reloaded
@@ -119,6 +120,16 @@ public void OnPluginStart()
     AutoExecConfig();
 }
 
+public void OnClientPutInServer(int client)
+{
+    SDKHook(client, SDKHook_WeaponCanUse, OnWeaponCanUse);
+}
+
+public void OnClientDisconnect(int client)
+{
+    SDKUnhook(client, SDKHook_WeaponCanUse, OnWeaponCanUse);
+}
+
 public void OnBuyZoneChanged(ConVar cvar, const char[] newValue, const char[] oldValue)
 {
     g_bBuyZoneOnly = GetConVarBool(g_Cvar_BuyZoneOnly);
@@ -138,6 +149,24 @@ public void OnTagChanged(ConVar cvar, const char[] newValue, const char[] oldVal
 public void OnHookBuyZoneChanged(ConVar cvar, const char[] newValue, const char[] oldValue)
 {
     g_bHookBuyZone = GetConVarBool(g_Cvar_HookOnBuyZone);
+}
+
+public Action OnWeaponCanUse(int client, int weapon)
+{
+    char weaponentity[64];
+    GetEdictClassname(weapon, weaponentity, sizeof(weaponentity));
+
+    for(int i = 0; i < g_iTotal; i++)
+    {
+        if(StrEqual(weaponentity, g_Weapon[i].data_entity, false))
+        {
+            if(g_Weapon[i].data_restrict)
+            {
+                return Plugin_Handled;
+            }
+        }
+    }
+    return Plugin_Continue;
 }
 
 public void OnClientCookiesCached(int client)
