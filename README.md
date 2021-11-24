@@ -9,6 +9,7 @@ Purchase weapon through command and menu.
 - Allowing Custom more than 1 Menu Command.
 
 ## Convar
+```
 // Only allow to purchase on buyzone only
 // -
 // Default: "0.0"
