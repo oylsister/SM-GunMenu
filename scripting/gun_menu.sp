@@ -15,7 +15,7 @@
 #define SLOT_GRENADE 3
 #define SLOT_KEVLAR 4
 
-#define WEAPON_SLOT_MAX 3
+#define WEAPON_SLOT_MAX 4
 
 enum struct Weapon_Data
 {
@@ -921,10 +921,19 @@ public int ClientLoadoutMenuHandler(Menu menu, MenuAction action, int param1, in
             }
             else if(StrEqual(info, "edit", false))
             {
-                
+                EditLoadout(param1);
             }
         }
+        case MenuAction_Cancel:
+        {
+            Command_GunMenu(param1, 0);
+        }
+        case MenuAction_End:
+        {
+            delete menu;
+        }
     }
+    return 0;
 }
 
 void SaveCurrentLoadout(int client, int slot)
@@ -974,6 +983,200 @@ void BuySavedLoadout(int client)
             }
         }
     }
+}
+
+void EditLoadout(int client)
+{
+    Menu menu = new Menu(EditLoadoutHandler, MENU_ACTIONS_ALL);
+    menu.SetTitle("%s Edit Loadout Option \nChoose the option to changed it.", sTag);
+    menu.AddItem("primary", "Primary");
+    menu.AddItem("secondary", "Secondary");
+    menu.AddItem("grenade", "Grennde");
+
+    menu.ExitBackButton = true;
+    menu.ExitButton = true;
+    menu.Display(client, MENU_TIME_FOREVER);
+}
+
+public int EditLoadoutHandler(Menu menu, MenuAction action, int param1, int param2)
+{
+    switch(action)
+    {
+        case MenuAction_DisplayItem:
+        {
+            char info[64];
+            char weaponname[64];
+            char display[64];
+            menu.GetItem(param2, info, sizeof(info));
+
+            if(StrEqual(info, "primary", false))
+            {
+                GetClientCookie(param1, g_hWeaponCookies[SLOT_PRIMARY], weaponname, sizeof(weaponname));
+                if(weaponname[0] == '\0')
+                {
+                    Format(display, sizeof(display), "%s: None", info);
+                    RedrawMenuItem(display);
+                }
+                else
+                {
+                    Format(display, sizeof(display), "%s: %s", info, weaponname);
+                    RedrawMenuItem(display);
+                }
+            }
+            else if(StrEqual(info, "secondary", false))
+            {
+                GetClientCookie(param1, g_hWeaponCookies[SLOT_SECONDARY], weaponname, sizeof(weaponname));
+                if(weaponname[0] == '\0')
+                {
+                    Format(display, sizeof(display), "%s: None", info);
+                    RedrawMenuItem(display);
+                }
+                else
+                {
+                    Format(display, sizeof(display), "%s: %s", info, weaponname);
+                    RedrawMenuItem(display);
+                }
+            }
+            if(StrEqual(info, "grenade", false))
+            {
+                GetClientCookie(param1, g_hWeaponCookies[SLOT_GRENADE], weaponname, sizeof(weaponname));
+                if(weaponname[0] == '\0')
+                {
+                    Format(display, sizeof(display), "%s: None", info);
+                    RedrawMenuItem(display);
+                }
+                else
+                {
+                    Format(display, sizeof(display), "%s: %s", info, weaponname);
+                    RedrawMenuItem(display);
+                }
+            }
+        }
+        case MenuAction_Select:
+        {
+            char info[64];
+            menu.GetItem(param2, info, sizeof(info));
+
+            if(StrEqual(info, "primary", false))
+            {
+                ChooseLoadout(param1, SLOT_PRIMARY);
+            }
+            else if(StrEqual(info, "secondary", false))
+            {
+                ChooseLoadout(param1, SLOT_SECONDARY);
+            }
+            else if(StrEqual(info, "grenade", false))
+            {
+                ChooseLoadout(param1, SLOT_GRENADE);
+            }
+        }
+        case MenuAction_Cancel:
+        {
+            ClientLoadoutMenu(param1);
+        }
+        case MenuAction_End:
+        {
+            delete menu;
+        }
+    }
+    return 0;
+}
+
+int currentslot;
+
+public void ChooseLoadout(int client, int slot)
+{
+    char weapontype[64];
+
+    if(slot == SLOT_PRIMARY)
+    {
+        Format(weapontype, sizeof(weapontype), "Primary");
+    }
+    else if(slot == SLOT_SECONDARY)
+    {
+        Format(weapontype, sizeof(weapontype), "Secondary");
+    }
+    else if(slot == SLOT_GRENADE)
+    {
+        Format(weapontype, sizeof(weapontype), "Grenade");
+    }
+
+    currentslot = slot;
+
+    Menu menu = new Menu(ChooseLoadoutHandler, MENU_ACTIONS_ALL);
+    menu.SetTitle("%s Edit %s Loadout", sTag, weapontype);
+    menu.AddItem("none", "None");
+
+    for(int i = 0; i < g_iTotal; i++)
+    {
+        if(g_Weapon[i].data_slot == slot)
+        {
+            char choice[64];
+            Format(choice, sizeof(choice), "%s", g_Weapon[i].data_name);
+            menu.AddItem(g_Weapon[i].data_name, choice);
+        }
+    }
+
+    menu.ExitBackButton = true;
+    menu.ExitButton = true;
+    menu.Display(client, MENU_TIME_FOREVER);
+}
+
+public int ChooseLoadoutHandler(Menu menu, MenuAction action, int param1, int param2)
+{
+    switch(action)
+    {
+        case MenuAction_DrawItem:
+        {
+            char info[64];
+            char cookie[64];
+            menu.GetItem(param2, info, sizeof(info));
+            GetClientCookie(param1, g_hWeaponCookies[currentslot], cookie, sizeof(cookie));
+            if(StrEqual(info, "none", false))
+            {
+                if(cookie[0] == '\0')
+                {
+                    return ITEMDRAW_DISABLED;
+                }
+            }
+            else
+            {
+                if(StrEqual(cookie, info, false))
+                {
+                    return ITEMDRAW_DISABLED;
+                }
+            }
+        }
+        case MenuAction_DisplayItem:
+        {
+            
+        }
+        case MenuAction_Select:
+        {
+            char info[64];
+            menu.GetItem(param2, info, sizeof(info));
+
+            if(StrEqual(info, "none", false))
+            {
+                SaveLoadoutCookie(param1, currentslot, "");
+                EditLoadout(param1);
+            }
+            else
+            {
+                SaveLoadoutCookie(param1, currentslot, info);
+                EditLoadout(param1);
+            }
+        }
+        case MenuAction_Cancel:
+        {
+            EditLoadout(param1);
+        }
+        case MenuAction_End:
+        {
+            delete menu;
+        }
+    }
+    return 0;
 }
 
 public void ServerSettingMenu(int client)
