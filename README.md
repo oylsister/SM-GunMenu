@@ -3,10 +3,10 @@ Purchase weapon through command and menu.
 
 ## Feature
 - Restrict Option.
-- Allowing Custom more than 1 command for each gun.
+- Allowing Customize more than 1 command for each gun.
 - Toggleable Auto-Rebuy on Spawn.
 - Hook the normal buy option in buyzone.
-- Allowing Custom more than 1 Menu Command.
+- Allowing Customize more than 1 command for menu.
 - Maximum Purchase for each weapon.
 
 ## Convar
