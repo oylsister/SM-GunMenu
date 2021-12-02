@@ -858,6 +858,17 @@ public void PurchaseWeapon(int client, const char[] entity)
                 PrintToChat(client, " \x04%s\x01 \x04\"%s\" has been restricted.", sTag, g_Weapon[i].data_name);
                 break;
             }
+
+            int purchasemax = GetWeaponPurchaseMax(g_Weapon[i].data_name);
+            int purchasecount = GetPurchaseCount(client, g_Weapon[i].data_name);
+            int purchaseleft = purchasemax - purchasecount;
+
+            if(purchasemax > 0 && purchaseleft <= 0)
+            {
+                PrintToChat(client, " \x04%s\x01 You have reached maximum purchase for \x06\"%s\"\x01. You can purchase it again on next round.", g_Weapon[i].data_name);
+                break;
+            }
+
             int cash = GetEntProp(client, Prop_Send, "m_iAccount");
 
             if(g_Weapon[i].data_price > cash)
@@ -890,6 +901,7 @@ public void PurchaseWeapon(int client, const char[] entity)
             SetEntProp(client, Prop_Send, "m_iAccount", cash - g_Weapon[i].data_price);
             GivePlayerItem(client, g_Weapon[i].data_entity);
             PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\" \x01. Select weapon from menu or use command to purchase again.", sTag, g_Weapon[i].data_name);
+            SetPurchaseCount(client, g_Weapon[i].data_name, 1, true);
             break;
         }
     }
@@ -1529,14 +1541,17 @@ int GetPurchaseCount(int client, const char[] weaponname)
 
 int GetWeaponPurchaseMax(const char[] weaponname)
 {
+    int maxpurchase;
+
     for(int i = 0; i < g_iTotal; i++)
     {
         if(StrEqual(weaponname, g_Weapon[i].data_name, false))
         {
-            return g_Weapon[i].data_maxpurchase;
-            break;
+            maxpurchase = g_Weapon[i].data_maxpurchase;
         }
     }
+
+    return maxpurchase;
 }
 
 stock bool IsClientAdmin(int client)
