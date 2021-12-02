@@ -7,6 +7,7 @@
 		"slot"		"1"
 		"command"	"sm_glock"
 		"restrict"	"0"
+		"maxpurchase"	"0"
 	}
 	"HKP2000"
 	{
@@ -15,6 +16,7 @@
 		"slot"		"1"
 		"command"	"sm_p2000"
 		"restrict"	"0"
+		"maxpurchase"	"0"
 	}
 	"USP"
 	{
@@ -23,6 +25,7 @@
 		"slot"		"1"
 		"command"	"sm_usp"
 		"restrict"	"0"
+		"maxpurchase"	"0"
 	}
 	"Elite"
 	{
@@ -31,6 +34,7 @@
 		"slot"		"1"
 		"command"	"sm_elite"
 		"restrict"	"0"
+		"maxpurchase"	"0"
 	}
 	"P250"
 	{
@@ -39,6 +43,7 @@
 		"slot"		"1"
 		"command"	"sm_p250"
 		"restrict"	"0"
+		"maxpurchase"	"0"
 	}
 	"CZ95"
 	{
@@ -47,6 +52,7 @@
 		"slot"		"1"
 		"command"	"sm_cz,sm_cz75"
 		"restrict"	"0"
+		"maxpurchase"	"0"
 	}
 	"Fiveseven"
 	{
@@ -55,6 +61,7 @@
 		"slot"		"1"
 		"command"	"sm_57,sm_fiveseven"
 		"restrict"	"0"
+		"maxpurchase"	"0"
 	}
 	"Tec9"
 	{
@@ -63,6 +70,7 @@
 		"slot"		"1"
 		"command"	"sm_tec9"
 		"restrict"	"0"
+		"maxpurchase"	"0"
 	}
 	"Deagle"
 	{
@@ -71,6 +79,7 @@
 		"slot"		"1"
 		"command"	"sm_deagle"
 		"restrict"	"0"
+		"maxpurchase"	"0"
 	}
 	"Revolver"
 	{
@@ -79,6 +88,7 @@
 		"slot"		"1"
 		"command"	"sm_revolver,sm_r8"
 		"restrict"	"0"
+		"maxpurchase"	"0"
 	}
 	
 	// Primary
@@ -89,6 +99,7 @@
 		"slot"		"0"
 		"command"	"sm_m249"
 		"restrict"	"0"
+		"maxpurchase"	"0"
 	}
 	"Negev"
 	{
@@ -97,6 +108,7 @@
 		"slot"		"0"
 		"command"	"sm_negev"
 		"restrict"	"0"
+		"maxpurchase"	"0"
 	}
 	"AK47"
 	{
@@ -105,6 +117,7 @@
 		"slot"		"0"
 		"command"	"sm_ak,sm_ak47"
 		"restrict"	"0"
+		"maxpurchase"	"0"
 	}
 	"M4A1-S"
 	{
@@ -113,6 +126,7 @@
 		"slot"		"0"
 		"command"	"sm_m4a1s,sm_m4s"
 		"restrict"	"0"
+		"maxpurchase"	"0"
 	}
 	"M4A4"
 	{
@@ -121,6 +135,7 @@
 		"slot"		"0"
 		"command"	"sm_m4a4"
 		"restrict"	"0"
+		"maxpurchase"	"0"
 	}
 	"P90"
 	{
@@ -129,6 +144,7 @@
 		"slot"		"0"
 		"command"	"sm_p90"
 		"restrict"	"0"
+		"maxpurchase"	"0"
 	}
 	"Bizon"
 	{
@@ -137,7 +153,7 @@
 		"slot"		"0"
 		"command"	"sm_bizon,sm_pp"
 		"restrict"	"0"
-	
+		"maxpurchase"	"0"
 	}
 	"AUG"
 	{
@@ -146,6 +162,7 @@
 		"slot"		"0"
 		"command"	"sm_aug"
 		"restrict"	"0"
+		"maxpurchase"	"0"
 	}
 	"SG556"
 	{
@@ -154,6 +171,7 @@
 		"slot"		"0"
 		"command"	"sm_sg556"
 		"restrict"	"0"
+		"maxpurchase"	"0"
 	}
 	"Nova"
 	{
@@ -162,6 +180,7 @@
 		"slot"		"0"
 		"command"	"sm_nova"
 		"restrict"	"0"
+		"maxpurchase"	"0"
 	}
 	"XM1014"
 	{
@@ -170,6 +189,7 @@
 		"slot"		"0"
 		"command"	"sm_xm1014,sm_xm10"
 		"restrict"	"0"
+		"maxpurchase"	"0"
 	}
 	"Mag7"
 	{
@@ -178,6 +198,7 @@
 		"slot"		"0"
 		"command"	"sm_mag7"
 		"restrict"	"0"
+		"maxpurchase"	"0"
 	}
 	"Sawed-off"
 	{
@@ -186,6 +207,7 @@
 		"slot"		"0"
 		"command"	"sm_sawedoff"
 		"restrict"	"0"
+		"maxpurchase"	"0"
 	}
 	"Mac10"
 	{
@@ -194,6 +216,7 @@
 		"slot"		"0"
 		"command"	"sm_mac10"
 		"restrict"	"0"
+		"maxpurchase"	"0"
 	}
 	"MP9"
 	{
@@ -202,6 +225,7 @@
 		"slot"		"0"
 		"command"	"sm_mp9"
 		"restrict"	"0"
+		"maxpurchase"	"0"
 	}
 	"UMP45"
 	{
@@ -210,6 +234,7 @@
 		"slot"		"0"
 		"command"	"sm_ump,sm_ump45"
 		"restrict"	"0"
+		"maxpurchase"	"0"
 	}
 	"MP7"
 	{
@@ -218,6 +243,7 @@
 		"slot"		"0"
 		"command"	"sm_mp7"
 		"restrict"	"0"
+		"maxpurchase"	"0"
 	}
 	"MP5SD"
 	{
@@ -226,6 +252,7 @@
 		"slot"		"0"
 		"command"	"sm_mp5"
 		"restrict"	"0"
+		"maxpurchase"	"0"
 	}
 	"Famas"
 	{
@@ -234,6 +261,7 @@
 		"slot"		"0"
 		"command"	"sm_famas"
 		"restrict"	"0"
+		"maxpurchase"	"0"
 	}
 	"Galil-AR"
 	{
@@ -242,6 +270,7 @@
 		"slot"		"0"
 		"command"	"sm_galil"
 		"restrict"	"0"
+		"maxpurchase"	"0"
 	}
 	"SSG08"
 	{
@@ -250,6 +279,7 @@
 		"slot"		"0"
 		"command"	"sm_ssg08,sm_scout"
 		"restrict"	"0"
+		"maxpurchase"	"0"
 	}
 	"AWP"
 	{
@@ -258,6 +288,7 @@
 		"slot"		"0"
 		"command"	"sm_awp"
 		"restrict"	"0"
+		"maxpurchase"	"0"
 	}
 	"Scar-20"
 	{
@@ -266,6 +297,7 @@
 		"slot"		"0"
 		"command"	"sm_scar,sm_scar20"
 		"restrict"	"0"
+		"maxpurchase"	"0"
 	}
 	"G3SG1"
 	{
@@ -274,6 +306,7 @@
 		"slot"		"0"
 		"command"	"sm_g3sg1"
 		"restrict"	"0"
+		"maxpurchase"	"0"
 	}
 	
 	// Grenade
@@ -284,6 +317,7 @@
 		"slot"		"3"
 		"command"	"sm_he"
 		"restrict"	"0"
+		"maxpurchase"	"5"
 	}
 	"IncGrenade"
 	{
@@ -292,6 +326,7 @@
 		"slot"		"5"
 		"command"	"sm_inc"
 		"restrict"	"0"
+		"maxpurchase"	"3"
 	}
 	"Molotov"
 	{
@@ -300,6 +335,7 @@
 		"slot"		"5"
 		"command"	"sm_molotov,sm_molo,sm_mol"
 		"restrict"	"0"
+		"maxpurchase"	"3"
 	}
 	"Decoy"
 	{
@@ -308,6 +344,7 @@
 		"slot"		"4"
 		"command"	"sm_decoy"
 		"restrict"	"1"
+		"maxpurchase"	"0"
 	}
 	"Flashbang"
 	{
@@ -316,6 +353,7 @@
 		"slot"		"4"
 		"command"	"sm_flash"
 		"restrict"	"1"
+		"maxpurchase"	"0"
 	}
 	"Smokegrenade"
 	{
@@ -324,6 +362,7 @@
 		"slot"		"4"
 		"command"	"sm_smoke"
 		"restrict"	"1"
+		"maxpurchase"	"0"
 	}
 	"Kevlar"
 	{
@@ -332,5 +371,6 @@
 		"slot"		"6"
 		"command"	"sm_kev,sm_kevlar"
 		"restrict"	"0"
+		"maxpurchase"	"0"
 	}
 }
