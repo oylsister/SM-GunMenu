@@ -34,6 +34,7 @@ enum struct Weapon_Data
     int data_slot;
     char data_command[64];
     bool data_restrict;
+    int data_maxpurchase;
 }
 
 int g_iTotal;
@@ -52,6 +53,8 @@ ConVar g_Cvar_BuyZoneOnly;
 ConVar g_Cvar_Command;
 ConVar g_Cvar_PluginTag;
 ConVar g_Cvar_HookOnBuyZone;
+
+Handle g_hPurchaseCount[MAXPLAYERS+1];
 
 // Client Preferences
 Handle g_hWeaponCookies[WEAPON_SLOT_MAX] = INVALID_HANDLE;
@@ -123,11 +126,23 @@ public void OnPluginStart()
 public void OnClientPutInServer(int client)
 {
     SDKHook(client, SDKHook_WeaponCanUse, OnWeaponCanUse);
+
+    if(g_hPurchaseCount[client] != INVALID_HANDLE)
+    {
+        CloseHandle(g_hPurchaseCount[client]);
+    }
+    g_hPurchaseCount[client] = CreateTrie();
 }
 
 public void OnClientDisconnect(int client)
 {
     SDKUnhook(client, SDKHook_WeaponCanUse, OnWeaponCanUse);
+
+    if(g_hPurchaseCount[client] != INVALID_HANDLE)
+    {
+        CloseHandle(g_hPurchaseCount[client]);
+    }
+    g_hPurchaseCount[client] = INVALID_HANDLE;
 }
 
 public void OnBuyZoneChanged(ConVar cvar, const char[] newValue, const char[] oldValue)
@@ -267,6 +282,8 @@ void LoadConfig()
 
             KvGetString(kv, "restrict", sTemp, sizeof(sTemp));
             g_Weapon[g_iTotal].data_restrict = view_as<bool>(StringToInt(sTemp));
+
+            g_Weapon[g_iTotal].data_maxpurchase = KvGetNum(kv, "maxpurchase", 0);
 
             g_iTotal++;
         }
@@ -434,6 +451,11 @@ public void OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
     if(g_bAutoRebuy[client])
     {
         BuySavedLoadout(client, true);
+    }
+
+    if(g_hPurchaseCount[client] != INVALID_HANDLE)
+    {
+        ClearTrie(g_hPurchaseCount[client]);
     }
 }
 
@@ -1484,6 +1506,37 @@ public int SelectRestrictMenuHandler(Menu menu, MenuAction action, int param1, i
         }
     }
     return 0;
+}
+
+void SetPurchaseCount(int client, const char[] weaponname, int value, bool add = false)
+{
+    int purchasemax;
+    
+    if(add)
+    {
+        purchasemax = GetPurchaseCount(client, weaponname);
+    }
+    SetTrieValue(g_hPurchaseCount[client], weaponname, purchasemax + value);
+}
+
+int GetPurchaseCount(int client, const char[] weaponname)
+{
+    int value;
+    GetTrieValue(g_hPurchaseCount[client], weaponname, value);
+
+    return value;
+}
+
+int GetWeaponPurchaseMax(const char[] weaponname)
+{
+    for(int i = 0; i < g_iTotal; i++)
+    {
+        if(StrEqual(weaponname, g_Weapon[i].data_name, false))
+        {
+            return g_Weapon[i].data_maxpurchase;
+            break;
+        }
+    }
 }
 
 stock bool IsClientAdmin(int client)
