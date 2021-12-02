@@ -7,6 +7,7 @@ Purchase weapon through command and menu.
 - Toggleable Auto-Rebuy on Spawn.
 - Hook the normal buy option in buyzone.
 - Allowing Custom more than 1 Menu Command.
+- Maximum Purchase for each weapon.
 
 ## Convar
 ```
@@ -33,6 +34,11 @@ sm_gunmenu_hookbuyzone "1.0"
 // -
 // Default: "[ZBuy]"
 sm_gunmenu_prefix "[ZBuy]"
+
+// Specify the path of config file for gun menu
+// - 
+// Default: "configs/gun_menu.txt"
+sm_gunmenu_configpath "configs/gun_menu.txt"
 ```
 
 ## Example Config
@@ -46,6 +52,7 @@ sm_gunmenu_prefix "[ZBuy]"
     "slot"		"1"  // Weapon Slot [0 = Primary, 1 = Secondary, 2 = Melee, 3 = Grenade, 4 = Kevlar]
     "command"	"sm_glock"  // Command for Purchase this specific weapon
     "restrict"	"0"     // Restrict This gun or not
+    "maxpurchase" "0"  // Maximum purchase in that round (0: No Maximum)
   }
 }
 ```
