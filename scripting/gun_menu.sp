@@ -53,6 +53,9 @@ ConVar g_Cvar_BuyZoneOnly;
 ConVar g_Cvar_Command;
 ConVar g_Cvar_PluginTag;
 ConVar g_Cvar_HookOnBuyZone;
+ConVar g_Cvar_ConfigPath;
+
+char sConfigPath[PLATFORM_MAX_PATH];
 
 Handle g_hPurchaseCount[MAXPLAYERS+1];
 
@@ -77,6 +80,7 @@ public void OnPluginStart()
     g_Cvar_Command = CreateConVar("sm_gunmenu_command", "sm_gun,sm_guns,sm_zmarket,sm_zbuy", "Specific command for open menu command");
     g_Cvar_PluginTag = CreateConVar("sm_gunmenu_prefix", "[ZBuy]", "Prefix for plugin");
     g_Cvar_HookOnBuyZone = CreateConVar("sm_gunmenu_hookbuyzone", "1.0", "Also apply purchase method to player purchase with default buy menu from buyzone", _, true, 0.0, true, 1.0);
+    g_Cvar_ConfigPath = CreateConVar("sm_gunmenu_configpath", "configs/gun_menu.txt", "Specify the path of config file for gun menu");
 
     RegAdminCmd("sm_restrict", Command_Restrict, ADMFLAG_GENERIC);
     RegAdminCmd("sm_unrestrict", Command_Unrestrict, ADMFLAG_GENERIC);
@@ -92,6 +96,7 @@ public void OnPluginStart()
     HookConVarChange(g_Cvar_Command, OnCommandChanged);
     HookConVarChange(g_Cvar_PluginTag, OnTagChanged);
     HookConVarChange(g_Cvar_HookOnBuyZone, OnHookBuyZoneChanged);
+    HookConVarChange(g_Cvar_ConfigPath, OnConfigPathChanged);
 
     if(g_hRebuyCookies == INVALID_HANDLE)
     {
@@ -166,6 +171,12 @@ public void OnHookBuyZoneChanged(ConVar cvar, const char[] newValue, const char[
     g_bHookBuyZone = GetConVarBool(g_Cvar_HookOnBuyZone);
 }
 
+public void OnConfigPathChanged(ConVar cvar, const char[] newValue, const char[] oldValue)
+{
+    GetConVarString(g_Cvar_ConfigPath, sConfigPath, sizeof(sConfigPath));
+    ReloadConfig();
+}
+
 public Action OnWeaponCanUse(int client, int weapon)
 {
     char weaponentity[64];
@@ -235,6 +246,7 @@ public void OnConfigsExecuted()
 {
     GetConVarString(g_Cvar_PluginTag, sTag, sizeof(sTag));
     g_bBuyZoneOnly = GetConVarBool(g_Cvar_BuyZoneOnly);
+    GetConVarString(g_Cvar_ConfigPath, sConfigPath, sizeof(sConfigPath));
 
     LoadConfig();
     CreateMenuCommand();
@@ -243,16 +255,20 @@ public void OnConfigsExecuted()
 
 public Action Command_ReloadConfig(int client, int args)
 {
+    ReloadConfig();
+    return Plugin_Handled;
+}
+
+public void ReloadConfig()
+{
     g_bCommandInitialized = false;
     LoadConfig();
     CreateGunCommand();
-    return Plugin_Handled;
 }
 
 void LoadConfig()
 {
     KeyValues kv;
-    char sConfigPath[PLATFORM_MAX_PATH];
     char sTemp[64];
 
     BuildPath(Path_SM, sConfigPath, sizeof(sConfigPath), "configs/gun_menu.txt");
