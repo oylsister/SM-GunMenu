@@ -57,7 +57,7 @@ ConVar g_Cvar_PluginTag;
 ConVar g_Cvar_HookOnBuyZone;
 ConVar g_Cvar_ConfigPath;
 
-char sConfigPath[PLATFORM_MAX_PATH];
+char g_sConfigPath[PLATFORM_MAX_PATH];
 
 Handle g_hPurchaseCount[MAXPLAYERS+1];
 
@@ -175,7 +175,7 @@ public void OnHookBuyZoneChanged(ConVar cvar, const char[] newValue, const char[
 
 public void OnConfigPathChanged(ConVar cvar, const char[] newValue, const char[] oldValue)
 {
-    GetConVarString(g_Cvar_ConfigPath, sConfigPath, sizeof(sConfigPath));
+    GetConVarString(g_Cvar_ConfigPath, g_sConfigPath, sizeof(g_sConfigPath));
     ReloadConfig();
 }
 
@@ -248,7 +248,7 @@ public void OnConfigsExecuted()
 {
     GetConVarString(g_Cvar_PluginTag, sTag, sizeof(sTag));
     g_bBuyZoneOnly = GetConVarBool(g_Cvar_BuyZoneOnly);
-    GetConVarString(g_Cvar_ConfigPath, sConfigPath, sizeof(sConfigPath));
+    GetConVarString(g_Cvar_ConfigPath, g_sConfigPath, sizeof(g_sConfigPath));
 
     LoadConfig();
     CreateMenuCommand();
@@ -272,8 +272,9 @@ void LoadConfig()
 {
     KeyValues kv;
     char sTemp[64];
+    char sConfigPath[PLATFORM_MAX_PATH];
 
-    BuildPath(Path_SM, sConfigPath, sizeof(sConfigPath), "configs/gun_menu.txt");
+    BuildPath(Path_SM, sConfigPath, sizeof(sConfigPath), "%s", g_sConfigPath);
 
     kv = CreateKeyValues("weapons");
     FileToKeyValues(kv, sConfigPath);
@@ -290,19 +291,25 @@ void LoadConfig()
             KvGetString(kv, "entity", sTemp, sizeof(sTemp));
             Format(g_Weapon[g_iTotal].data_entity, 64, "%s", sTemp);
 
+            KvGetString(kv, "price", sTemp, sizeof(sTemp));
+            g_Weapon[g_iTotal].data_price = StringToInt(sTemp);
+
             g_Weapon[g_iTotal].data_multiprice = KvGetFloat(kv, "multiprice", 1.0);
             
             if(g_Weapon[g_iTotal].data_multiprice > 1.0)
             {
                 g_Weapon[g_iTotal].data_multienable = true;
             }
-            else
+            else if(g_Weapon[g_iTotal].data_multiprice == 1.0)
             {
                 g_Weapon[g_iTotal].data_multienable = false;
             }
-
-            KvGetString(kv, "price", sTemp, sizeof(sTemp));
-            g_Weapon[g_iTotal].data_price = StringToInt(sTemp);
+            else
+            {
+                LogError("[%s] You cannot set value to lower than 1.0 for multiprice!", g_Weapon[g_iTotal].data_name);
+                g_Weapon[g_iTotal].data_multiprice = 1.0;
+                g_Weapon[g_iTotal].data_multienable = false;
+            }
 
             g_Weapon[g_iTotal].data_slot = KvGetNum(kv, "slot", -1);
 
@@ -900,7 +907,28 @@ public void PurchaseWeapon(int client, const char[] entity)
 
             int cash = GetEntProp(client, Prop_Send, "m_iAccount");
 
-            if(g_Weapon[i].data_price > cash)
+            int originalprice = g_Weapon[i].data_price;
+            bool ismulti = g_Weapon[i].data_multienable;
+            float multiprice = g_Weapon[i].data_multiprice;
+            int totalprice;
+
+            if(ismulti)
+            {
+                if(purchasecount > 1)
+                {
+                    totalprice = RoundToNearest(view_as<float>(originalprice) * multiprice);
+                }
+                else
+                {
+                    totalprice = originalprice;
+                }
+            }
+            else
+            {
+                totalprice = originalprice;
+            }
+
+            if(totalprice > cash)
             {
                 PrintToChat(client, " \x04%s\x01 You don't have enough cash to purchase this item.", sTag);
                 break;
@@ -911,7 +939,22 @@ public void PurchaseWeapon(int client, const char[] entity)
                 SetEntProp(client, Prop_Send, "m_ArmorValue", 100);
                 SetEntProp(client, Prop_Send, "m_bHasHelmet", 1);
                 SetEntProp(client, Prop_Send, "m_iAccount", cash - g_Weapon[i].data_price);
-                PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\" \x01. Select weapon from menu or use command to purchase again.", sTag, g_Weapon[i].data_name);
+
+                if(!ismulti)
+                {
+                    PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\" \x01. Select weapon from menu or use command to purchase again.", sTag, g_Weapon[i].data_name);
+                }
+                else
+                {
+                    if(purchasecount > 1)
+                    {
+                        PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\" \x01. For \x04%i$ because you re-purchase this weapon again.", sTag, g_Weapon[i].data_name, totalprice);
+                    }
+                    else
+                    {
+                        PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\" \x01. Next time it will cost \x04\"%f\" from original price to purchase.", sTag, g_Weapon[i].data_name, multiprice);
+                    }
+                }
                 
                 break;
             }
@@ -929,7 +972,21 @@ public void PurchaseWeapon(int client, const char[] entity)
 
             SetEntProp(client, Prop_Send, "m_iAccount", cash - g_Weapon[i].data_price);
             GivePlayerItem(client, g_Weapon[i].data_entity);
-            PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\" \x01. Select weapon from menu or use command to purchase again.", sTag, g_Weapon[i].data_name);
+            if(!ismulti)
+            {
+                PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\" \x01. Select weapon from menu or use command to purchase again.", sTag, g_Weapon[i].data_name);
+            }
+            else
+            {
+                if(purchasecount > 1)
+                {
+                    PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\" \x01. For \x04%i$ because you re-purchase this weapon again.", sTag, g_Weapon[i].data_name, totalprice);
+                }
+                else
+                {
+                    PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\" \x01. Next time it will cost \x04\"%f\" from original price to purchase.", sTag, g_Weapon[i].data_name, multiprice);
+                }
+            }
             SetPurchaseCount(client, g_Weapon[i].data_name, 1, true);
             break;
         }

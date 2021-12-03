@@ -8,6 +8,7 @@ Purchase weapon through command and menu.
 - Hook the normal buy option in buyzone.
 - Allowing Customize more than 1 command for menu.
 - Maximum Purchase for each weapon.
+- Multi Price on Second Purchase for each weapon.
 
 ## Convar
 ```
@@ -49,6 +50,7 @@ sm_gunmenu_configpath "configs/gun_menu.txt"
   {
     "entity"    "weapon_glock" // Entity
     "price"     "200" // Price
+	"multiprice"	"1.0" // Put this greater than 1.0 will make second purchase cost more. (cost: Original_Price * MultiPrice) Set this below than 1.0, it will not work at all. 
     "slot"		"1"  // Weapon Slot [0 = Primary, 1 = Secondary, 2 = Melee, 3 = Grenade, 4 = Kevlar]
     "command"	"sm_glock"  // Command for Purchase this specific weapon
     "restrict"	"0"     // Restrict This gun or not

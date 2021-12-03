@@ -4,6 +4,7 @@
 	{
 		"entity"    "weapon_glock"
 		"price"     "200"
+		"multiprice"	"1.0" 
 		"slot"		"1"
 		"command"	"sm_glock"
 		"restrict"	"0"
@@ -13,6 +14,7 @@
 	{
 		"entity"    "weapon_hkp2000"
 		"price"     "300"
+		"multiprice"	"1.0" 
 		"slot"		"1"
 		"command"	"sm_p2000"
 		"restrict"	"0"
@@ -22,6 +24,7 @@
 	{
 		"entity"    "weapon_usp_silencer"
 		"price"     "300"
+		"multiprice"	"1.0" 
 		"slot"		"1"
 		"command"	"sm_usp"
 		"restrict"	"0"
@@ -31,6 +34,7 @@
 	{
 		"entity"    "weapon_elite"
 		"price"     "300"
+		"multiprice"	"1.0" 
 		"slot"		"1"
 		"command"	"sm_elite"
 		"restrict"	"0"
@@ -40,6 +44,7 @@
 	{
 		"entity"    "weapon_p250"
 		"price"     "500"
+		"multiprice"	"1.0" 
 		"slot"		"1"
 		"command"	"sm_p250"
 		"restrict"	"0"
@@ -49,6 +54,7 @@
 	{
 		"entity"    "weapon_cz75a"
 		"price"     "800"
+		"multiprice"	"1.0" 
 		"slot"		"1"
 		"command"	"sm_cz,sm_cz75"
 		"restrict"	"0"
@@ -58,6 +64,7 @@
 	{
 		"entity"    "weapon_fiveseven"
 		"price"     "800"
+		"multiprice"	"1.0" 
 		"slot"		"1"
 		"command"	"sm_57,sm_fiveseven"
 		"restrict"	"0"
@@ -67,6 +74,7 @@
 	{
 		"entity"    "weapon_tec9"
 		"price"     "800"
+		"multiprice"	"1.0" 
 		"slot"		"1"
 		"command"	"sm_tec9"
 		"restrict"	"0"
@@ -76,6 +84,7 @@
 	{
 		"entity"    "weapon_deagle"
 		"price"     "800"
+		"multiprice"	"1.0" 
 		"slot"		"1"
 		"command"	"sm_deagle"
 		"restrict"	"0"
@@ -85,6 +94,7 @@
 	{
 		"entity"    "weapon_revolver"
 		"price"     "800"
+		"multiprice"	"1.0" 
 		"slot"		"1"
 		"command"	"sm_revolver,sm_r8"
 		"restrict"	"0"
@@ -96,6 +106,7 @@
 	{
 		"entity"    "weapon_m249"
 		"price"     "5000"
+		"multiprice"	"1.0" 
 		"slot"		"0"
 		"command"	"sm_m249"
 		"restrict"	"0"
@@ -105,6 +116,7 @@
 	{
 		"entity"    "weapon_negev"
 		"price"     "1800"
+		"multiprice"	"1.0" 
 		"slot"		"0"
 		"command"	"sm_negev"
 		"restrict"	"0"
@@ -114,6 +126,7 @@
 	{
 		"entity"    "weapon_ak47"
 		"price"     "2700"
+		"multiprice"	"1.0" 
 		"slot"		"0"
 		"command"	"sm_ak,sm_ak47"
 		"restrict"	"0"
@@ -123,6 +136,7 @@
 	{
 		"entity"    "weapon_m4a1_silencer"
 		"price"     "3100"
+		"multiprice"	"1.0" 
 		"slot"		"0"
 		"command"	"sm_m4a1s,sm_m4s"
 		"restrict"	"0"
@@ -132,6 +146,7 @@
 	{
 		"entity"    "weapon_m4a1"
 		"price"     "3000"
+		"multiprice"	"1.0" 
 		"slot"		"0"
 		"command"	"sm_m4a4"
 		"restrict"	"0"
@@ -141,6 +156,7 @@
 	{
 		"entity"    "weapon_p90"
 		"price"     "2350"
+		"multiprice"	"1.0" 
 		"slot"		"0"
 		"command"	"sm_p90"
 		"restrict"	"0"
@@ -150,6 +166,7 @@
 	{
 		"entity"	"weapon_bizon"
 		"price"		"1600"
+		"multiprice"	"1.0" 
 		"slot"		"0"
 		"command"	"sm_bizon,sm_pp"
 		"restrict"	"0"
@@ -159,6 +176,7 @@
 	{
 		"entity"    "weapon_aug"
 		"price"     "3300"
+		"multiprice"	"1.0" 
 		"slot"		"0"
 		"command"	"sm_aug"
 		"restrict"	"0"
@@ -168,6 +186,7 @@
 	{
 		"entity"    "weapon_sg556"
 		"price"     "3300"
+		"multiprice"	"1.0" 
 		"slot"		"0"
 		"command"	"sm_sg556"
 		"restrict"	"0"
@@ -177,6 +196,7 @@
 	{
 		"entity"    "weapon_nova"
 		"price"     "1200"
+		"multiprice"	"1.0" 
 		"slot"		"0"
 		"command"	"sm_nova"
 		"restrict"	"0"
@@ -186,6 +206,7 @@
 	{
 		"entity"    "weapon_xm1014"
 		"price"     "2000"
+		"multiprice"	"1.0" 
 		"slot"		"0"
 		"command"	"sm_xm1014,sm_xm10"
 		"restrict"	"0"
@@ -195,6 +216,7 @@
 	{
 		"entity"    "weapon_mag7"
 		"price"     "1800"
+		"multiprice"	"1.0" 
 		"slot"		"0"
 		"command"	"sm_mag7"
 		"restrict"	"0"
@@ -204,6 +226,7 @@
 	{
 		"entity"    "weapon_sawedoff"
 		"price"     "1200"
+		"multiprice"	"1.0" 
 		"slot"		"0"
 		"command"	"sm_sawedoff"
 		"restrict"	"0"
@@ -213,6 +236,7 @@
 	{
 		"entity"    "weapon_mac10"
 		"price"     "1000"
+		"multiprice"	"1.0" 
 		"slot"		"0"
 		"command"	"sm_mac10"
 		"restrict"	"0"
@@ -222,6 +246,7 @@
 	{
 		"entity"    "weapon_mp9"
 		"price"     "1200"
+		"multiprice"	"1.0" 
 		"slot"		"0"
 		"command"	"sm_mp9"
 		"restrict"	"0"
@@ -231,6 +256,7 @@
 	{
 		"entity"    "weapon_ump45"
 		"price"     "1300"
+		"multiprice"	"1.0" 
 		"slot"		"0"
 		"command"	"sm_ump,sm_ump45"
 		"restrict"	"0"
@@ -240,6 +266,7 @@
 	{
 		"entity"    "weapon_mp7"
 		"price"     "1700"
+		"multiprice"	"1.0" 
 		"slot"		"0"
 		"command"	"sm_mp7"
 		"restrict"	"0"
@@ -249,6 +276,7 @@
 	{
 		"entity"    "weapon_mp5sd"
 		"price"     "1200"
+		"multiprice"	"1.0" 
 		"slot"		"0"
 		"command"	"sm_mp5"
 		"restrict"	"0"
@@ -258,6 +286,7 @@
 	{
 		"entity"    "weapon_famas"
 		"price"     "2500"
+		"multiprice"	"1.0" 
 		"slot"		"0"
 		"command"	"sm_famas"
 		"restrict"	"0"
@@ -267,6 +296,7 @@
 	{
 		"entity"    "weapon_galilar"
 		"price"     "2300"
+		"multiprice"	"1.0" 
 		"slot"		"0"
 		"command"	"sm_galil"
 		"restrict"	"0"
@@ -276,6 +306,7 @@
 	{
 		"entity"    "weapon_ssg08"
 		"price"     "1500"
+		"multiprice"	"1.0" 
 		"slot"		"0"
 		"command"	"sm_ssg08,sm_scout"
 		"restrict"	"0"
@@ -285,6 +316,7 @@
 	{
 		"entity"    "weapon_awp"
 		"price"     "4750"
+		"multiprice"	"1.0" 
 		"slot"		"0"
 		"command"	"sm_awp"
 		"restrict"	"0"
@@ -294,6 +326,7 @@
 	{
 		"entity"    "weapon_scar20"
 		"price"     "5000"
+		"multiprice"	"1.0" 
 		"slot"		"0"
 		"command"	"sm_scar,sm_scar20"
 		"restrict"	"0"
@@ -303,6 +336,7 @@
 	{
 		"entity"    "weapon_g3sg1"
 		"price"     "1200"
+		"multiprice"	"1.0" 
 		"slot"		"0"
 		"command"	"sm_g3sg1"
 		"restrict"	"0"
@@ -314,6 +348,7 @@
 	{
 		"entity"    "weapon_hegrenade"
 		"price"     "1000"
+		"multiprice"	"1.0" 
 		"slot"		"3"
 		"command"	"sm_he"
 		"restrict"	"0"
@@ -323,6 +358,7 @@
 	{
 		"entity"    "weapon_incgrenade"
 		"price"     "1500"
+		"multiprice"	"1.0" 
 		"slot"		"5"
 		"command"	"sm_inc"
 		"restrict"	"0"
@@ -332,6 +368,7 @@
 	{
 		"entity"    "weapon_molotov"
 		"price"     "1200"
+		"multiprice"	"1.0" 
 		"slot"		"5"
 		"command"	"sm_molotov,sm_molo,sm_mol"
 		"restrict"	"0"
@@ -341,6 +378,7 @@
 	{
 		"entity"    "weapon_decoy"
 		"price"     "1200"
+		"multiprice"	"1.0" 
 		"slot"		"4"
 		"command"	"sm_decoy"
 		"restrict"	"1"
@@ -350,6 +388,7 @@
 	{
 		"entity"    "weapon_flashbang"
 		"price"     "800"
+		"multiprice"	"1.0" 
 		"slot"		"4"
 		"command"	"sm_flash"
 		"restrict"	"1"
@@ -359,6 +398,7 @@
 	{
 		"entity"    "weapon_smokegrenade"
 		"price"     "1200"
+		"multiprice"	"1.0" 
 		"slot"		"4"
 		"command"	"sm_smoke"
 		"restrict"	"1"
@@ -368,6 +408,7 @@
 	{
 		"entity"    "weapon_kevlar"
 		"price"     "1000"
+		"multiprice"	"1.0" 
 		"slot"		"6"
 		"command"	"sm_kev,sm_kevlar"
 		"restrict"	"0"
