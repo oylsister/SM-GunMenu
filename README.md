@@ -3,6 +3,7 @@ Purchase weapon through command and menu.
 
 ## Feature
 - Restrict Option.
+- Allowing Player to save their own loadout.
 - Allowing Customize more than 1 command for each gun.
 - Toggleable Auto-Rebuy on Spawn.
 - Hook the normal buy option in buyzone.
