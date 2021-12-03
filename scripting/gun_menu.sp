@@ -30,6 +30,8 @@ enum struct Weapon_Data
 {
     char data_name[64];
     char data_entity[64];
+    bool data_multienable;
+    float data_multiprice;
     int data_price;
     int data_slot;
     char data_command[64];
@@ -287,6 +289,17 @@ void LoadConfig()
 
             KvGetString(kv, "entity", sTemp, sizeof(sTemp));
             Format(g_Weapon[g_iTotal].data_entity, 64, "%s", sTemp);
+
+            g_Weapon[g_iTotal].data_multiprice = KvGetFloat(kv, "multiprice", 1.0);
+            
+            if(g_Weapon[g_iTotal].data_multiprice > 1.0)
+            {
+                g_Weapon[g_iTotal].data_multienable = true;
+            }
+            else
+            {
+                g_Weapon[g_iTotal].data_multienable = false;
+            }
 
             KvGetString(kv, "price", sTemp, sizeof(sTemp));
             g_Weapon[g_iTotal].data_price = StringToInt(sTemp);
