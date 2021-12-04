@@ -75,10 +75,10 @@ bool g_bAutoRebuy[MAXPLAYERS+1];
 public Plugin myinfo = 
 {
     name = "[CSGO/CSS] Gun Menu",
-	author = "Oylsister",
-	description = "Purchase weapon from the menu and create specific command to purchase specific weapon",
-	version = "1.0",
-	url = "https://github.com/oylsister"
+    author = "Oylsister",
+    description = "Purchase weapon from the menu and create specific command to purchase specific weapon",
+    version = "1.1",
+    url = "https://github.com/oylsister/SM-GunMenu"
 };
 
 public void OnPluginStart()
@@ -1700,5 +1700,5 @@ stock bool IsClientAdmin(int client)
 
 stock bool IsClientInBuyZone(int client)
 {
-	return view_as<bool>(GetEntProp(client, Prop_Send,"m_bInBuyZone"));
+    return view_as<bool>(GetEntProp(client, Prop_Send,"m_bInBuyZone"));
 }
