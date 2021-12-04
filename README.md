@@ -1,5 +1,5 @@
 # [CS:GO/CS:S] SM-GunMenu
-Purchase weapon through command and menu.
+Purchase weapon through command and menu with customizable config for gun command.
 
 ## Feature
 - Restrict Option.
