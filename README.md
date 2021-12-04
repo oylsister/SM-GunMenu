@@ -1,4 +1,4 @@
-# SM-GunMenu
+# [CS:GO/CS:S] SM-GunMenu
 Purchase weapon through command and menu.
 
 ## Feature
@@ -51,7 +51,7 @@ sm_gunmenu_configpath "configs/gun_menu.txt"
   {
     "entity"    "weapon_glock" // Entity
     "price"     "200" // Price
-	"multiprice"	"1.0" // Put this greater than 1.0 will make second purchase cost more. (cost: Original_Price * MultiPrice) Set this below than 1.0, it will not work at all. 
+    "multiprice"	"1.0" // Put this greater than 1.0 will make second purchase cost more. (cost: Original_Price * MultiPrice) Set this below than 1.0, it will not work at all. 
     "slot"		"1"  // Weapon Slot [0 = Primary, 1 = Secondary, 2 = Melee, 3 = Grenade, 4 = Kevlar]
     "command"	"sm_glock"  // Command for Purchase this specific weapon
     "restrict"	"0"     // Restrict This gun or not
