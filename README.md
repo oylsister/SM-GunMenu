@@ -2,7 +2,7 @@
 Purchase weapon through command and menu with customizable config for gun command.
 
 ## Feature
-- Restrict Option.
+- Restrict Option Including Weapon Type (NEW)
 - Allowing Player to save their own loadout.
 - Allowing Customize more than 1 command for each gun.
 - Toggleable Auto-Rebuy on Spawn.
@@ -50,6 +50,7 @@ sm_gunmenu_configpath "configs/gun_menu.txt"
   "Glock" // Weapon Name
   {
     "entity"    "weapon_glock" // Entity
+    "type"      "Pistol" // Weapon Type
     "price"     "200" // Price
     "multiprice"	"1.0" // Put this greater than 1.0 will make second purchase cost more. (cost: Original_Price * MultiPrice) Set this below than 1.0, it will not work at all. 
     "slot"		"1"  // Weapon Slot [0 = Primary, 1 = Secondary, 2 = Melee, 3 = Grenade, 4 = Kevlar]
