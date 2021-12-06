@@ -3,6 +3,7 @@
 	"Glock"
 	{
 		"entity"    "weapon_glock"
+		"type"		"Pistol"
 		"price"     "200"
 		"multiprice"	"1.0" 
 		"slot"		"1"
@@ -13,6 +14,7 @@
 	"HKP2000"
 	{
 		"entity"    "weapon_hkp2000"
+		"type"		"Pistol"
 		"price"     "300"
 		"multiprice"	"1.0" 
 		"slot"		"1"
@@ -23,6 +25,7 @@
 	"USP"
 	{
 		"entity"    "weapon_usp_silencer"
+		"type"		"Pistol"
 		"price"     "300"
 		"multiprice"	"1.0" 
 		"slot"		"1"
@@ -33,6 +36,7 @@
 	"Elite"
 	{
 		"entity"    "weapon_elite"
+		"type"		"Pistol"
 		"price"     "300"
 		"multiprice"	"1.0" 
 		"slot"		"1"
@@ -43,6 +47,7 @@
 	"P250"
 	{
 		"entity"    "weapon_p250"
+		"type"		"Pistol"
 		"price"     "500"
 		"multiprice"	"1.0" 
 		"slot"		"1"
@@ -53,6 +58,7 @@
 	"CZ95"
 	{
 		"entity"    "weapon_cz75a"
+		"type"		"Pistol"
 		"price"     "800"
 		"multiprice"	"1.0" 
 		"slot"		"1"
@@ -63,6 +69,7 @@
 	"Fiveseven"
 	{
 		"entity"    "weapon_fiveseven"
+		"type"		"Pistol"
 		"price"     "800"
 		"multiprice"	"1.0" 
 		"slot"		"1"
@@ -73,6 +80,7 @@
 	"Tec9"
 	{
 		"entity"    "weapon_tec9"
+		"type"		"Pistol"
 		"price"     "800"
 		"multiprice"	"1.0" 
 		"slot"		"1"
@@ -83,6 +91,7 @@
 	"Deagle"
 	{
 		"entity"    "weapon_deagle"
+		"type"		"Pistol"
 		"price"     "800"
 		"multiprice"	"1.0" 
 		"slot"		"1"
@@ -93,6 +102,7 @@
 	"Revolver"
 	{
 		"entity"    "weapon_revolver"
+		"type"		"Pistol"
 		"price"     "800"
 		"multiprice"	"1.0" 
 		"slot"		"1"
@@ -105,6 +115,7 @@
 	"M249"
 	{
 		"entity"    "weapon_m249"
+		"type"		"MachineGun"
 		"price"     "5000"
 		"multiprice"	"1.0" 
 		"slot"		"0"
@@ -115,6 +126,7 @@
 	"Negev"
 	{
 		"entity"    "weapon_negev"
+		"type"		"MachineGun"
 		"price"     "1800"
 		"multiprice"	"1.0" 
 		"slot"		"0"
@@ -125,6 +137,7 @@
 	"AK47"
 	{
 		"entity"    "weapon_ak47"
+		"type"		"Rifle"
 		"price"     "2700"
 		"multiprice"	"1.0" 
 		"slot"		"0"
@@ -135,6 +148,7 @@
 	"M4A1-S"
 	{
 		"entity"    "weapon_m4a1_silencer"
+		"type"		"Rifle"
 		"price"     "3100"
 		"multiprice"	"1.0" 
 		"slot"		"0"
@@ -145,6 +159,7 @@
 	"M4A4"
 	{
 		"entity"    "weapon_m4a1"
+		"type"		"Rifle"
 		"price"     "3000"
 		"multiprice"	"1.0" 
 		"slot"		"0"
@@ -155,6 +170,7 @@
 	"P90"
 	{
 		"entity"    "weapon_p90"
+		"type"		"SMG"
 		"price"     "2350"
 		"multiprice"	"1.0" 
 		"slot"		"0"
@@ -165,6 +181,7 @@
 	"Bizon"
 	{
 		"entity"	"weapon_bizon"
+		"type"		"SMG"
 		"price"		"1600"
 		"multiprice"	"1.0" 
 		"slot"		"0"
@@ -175,6 +192,7 @@
 	"AUG"
 	{
 		"entity"    "weapon_aug"
+		"type"		"Rifle"
 		"price"     "3300"
 		"multiprice"	"1.0" 
 		"slot"		"0"
@@ -185,6 +203,7 @@
 	"SG556"
 	{
 		"entity"    "weapon_sg556"
+		"type"		"Rifle"
 		"price"     "3300"
 		"multiprice"	"1.0" 
 		"slot"		"0"
@@ -195,6 +214,7 @@
 	"Nova"
 	{
 		"entity"    "weapon_nova"
+		"type"		"Shotgun"
 		"price"     "1200"
 		"multiprice"	"1.0" 
 		"slot"		"0"
@@ -205,6 +225,7 @@
 	"XM1014"
 	{
 		"entity"    "weapon_xm1014"
+		"type"		"Shotgun"
 		"price"     "2000"
 		"multiprice"	"1.0" 
 		"slot"		"0"
@@ -215,6 +236,7 @@
 	"Mag7"
 	{
 		"entity"    "weapon_mag7"
+		"type"		"Shotgun"
 		"price"     "1800"
 		"multiprice"	"1.0" 
 		"slot"		"0"
@@ -225,6 +247,7 @@
 	"Sawed-off"
 	{
 		"entity"    "weapon_sawedoff"
+		"type"		"Shotgun"
 		"price"     "1200"
 		"multiprice"	"1.0" 
 		"slot"		"0"
@@ -235,6 +258,7 @@
 	"Mac10"
 	{
 		"entity"    "weapon_mac10"
+		"type"		"SMG"
 		"price"     "1000"
 		"multiprice"	"1.0" 
 		"slot"		"0"
@@ -245,6 +269,7 @@
 	"MP9"
 	{
 		"entity"    "weapon_mp9"
+		"type"		"SMG"
 		"price"     "1200"
 		"multiprice"	"1.0" 
 		"slot"		"0"
@@ -255,6 +280,7 @@
 	"UMP45"
 	{
 		"entity"    "weapon_ump45"
+		"type"		"SMG"
 		"price"     "1300"
 		"multiprice"	"1.0" 
 		"slot"		"0"
@@ -265,6 +291,7 @@
 	"MP7"
 	{
 		"entity"    "weapon_mp7"
+		"type"		"SMG"
 		"price"     "1700"
 		"multiprice"	"1.0" 
 		"slot"		"0"
@@ -275,6 +302,7 @@
 	"MP5SD"
 	{
 		"entity"    "weapon_mp5sd"
+		"type"		"SMG"
 		"price"     "1200"
 		"multiprice"	"1.0" 
 		"slot"		"0"
@@ -285,6 +313,7 @@
 	"Famas"
 	{
 		"entity"    "weapon_famas"
+		"type"		"Rifle"
 		"price"     "2500"
 		"multiprice"	"1.0" 
 		"slot"		"0"
@@ -295,6 +324,7 @@
 	"Galil-AR"
 	{
 		"entity"    "weapon_galilar"
+		"type"		"Rifle"
 		"price"     "2300"
 		"multiprice"	"1.0" 
 		"slot"		"0"
@@ -305,6 +335,7 @@
 	"SSG08"
 	{
 		"entity"    "weapon_ssg08"
+		"type"		"Sniper"
 		"price"     "1500"
 		"multiprice"	"1.0" 
 		"slot"		"0"
@@ -315,6 +346,7 @@
 	"AWP"
 	{
 		"entity"    "weapon_awp"
+		"type"		"Sniper"
 		"price"     "4750"
 		"multiprice"	"1.0" 
 		"slot"		"0"
@@ -325,6 +357,7 @@
 	"Scar-20"
 	{
 		"entity"    "weapon_scar20"
+		"type"		"Sniper"
 		"price"     "5000"
 		"multiprice"	"1.0" 
 		"slot"		"0"
@@ -335,6 +368,7 @@
 	"G3SG1"
 	{
 		"entity"    "weapon_g3sg1"
+		"type"		"Sniper"
 		"price"     "1200"
 		"multiprice"	"1.0" 
 		"slot"		"0"
@@ -347,6 +381,7 @@
 	"HEGrenade"
 	{
 		"entity"    "weapon_hegrenade"
+		"type"		"Grenade"
 		"price"     "1000"
 		"multiprice"	"1.0" 
 		"slot"		"3"
@@ -357,6 +392,7 @@
 	"IncGrenade"
 	{
 		"entity"    "weapon_incgrenade"
+		"type"		"Grenade"
 		"price"     "1500"
 		"multiprice"	"1.0" 
 		"slot"		"5"
@@ -367,6 +403,7 @@
 	"Molotov"
 	{
 		"entity"    "weapon_molotov"
+		"type"		"Grenade"
 		"price"     "1200"
 		"multiprice"	"1.0" 
 		"slot"		"5"
@@ -377,6 +414,7 @@
 	"Decoy"
 	{
 		"entity"    "weapon_decoy"
+		"type"		"Grenade"
 		"price"     "1200"
 		"multiprice"	"1.0" 
 		"slot"		"4"
@@ -387,6 +425,7 @@
 	"Flashbang"
 	{
 		"entity"    "weapon_flashbang"
+		"type"		"Grenade"
 		"price"     "800"
 		"multiprice"	"1.0" 
 		"slot"		"4"
@@ -397,6 +436,7 @@
 	"Smokegrenade"
 	{
 		"entity"    "weapon_smokegrenade"
+		"type"		"Grenade"
 		"price"     "1200"
 		"multiprice"	"1.0" 
 		"slot"		"4"
@@ -407,6 +447,7 @@
 	"Kevlar"
 	{
 		"entity"    "weapon_kevlar"
+		"type"		"Armor"
 		"price"     "1000"
 		"multiprice"	"1.0" 
 		"slot"		"6"

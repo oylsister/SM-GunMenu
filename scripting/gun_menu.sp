@@ -6,8 +6,8 @@
 #include <sdkhooks>
 #include <clientprefs>
 
-#define ZRIOT //You can add '//' on this if you're not gonna use for Zriot or Zombie:Reloaded
-#define SMRPG_ARMOR
+//#define ZRIOT //You can add '//' on this if you're not gonna use for Zriot or Zombie:Reloaded
+//#define SMRPG_ARMOR
 
 #if defined ZRIOT
 #include <zriot>
@@ -35,6 +35,7 @@ enum struct Weapon_Data
 {
     char data_name[64];
     char data_entity[64];
+    char data_type[64];
     bool data_multienable;
     float data_multiprice;
     int data_price;
@@ -77,7 +78,7 @@ public Plugin myinfo =
     name = "[CSGO/CSS] Gun Menu",
     author = "Oylsister",
     description = "Purchase weapon from the menu and create specific command to purchase specific weapon",
-    version = "1.1",
+    version = "1.2",
     url = "https://github.com/oylsister/SM-GunMenu"
 };
 
@@ -295,6 +296,9 @@ void LoadConfig()
 
             KvGetString(kv, "entity", sTemp, sizeof(sTemp));
             Format(g_Weapon[g_iTotal].data_entity, 64, "%s", sTemp);
+
+            KvGetString(kv, "type", sTemp, sizeof(sTemp));
+            Format(g_Weapon[g_iTotal].data_type, 64, "%s", sTemp);
 
             KvGetString(kv, "price", sTemp, sizeof(sTemp));
             g_Weapon[g_iTotal].data_price = StringToInt(sTemp);
@@ -521,11 +525,17 @@ public Action Command_Restrict(int client, int args)
             found = true;
             return Plugin_Handled;
         }
+        else if(StrEqual(sArg, g_Weapon[i].data_type, false))
+        {
+            RestrictTypeWeapon(sArg);
+            found = true;
+            return Plugin_Handled;
+        }
     }
 
     if(!found)
     {
-        ReplyToCommand(client, " \x04%s\x01 the weapon is invaild.");
+        ReplyToCommand(client, " \x04%s\x01 the weapon or weapon type is invaild.");
         return Plugin_Handled;
     }
     return Plugin_Handled;
@@ -552,6 +562,12 @@ public Action Command_Unrestrict(int client, int args)
             found = true;
             return Plugin_Handled;
         }
+        else if(StrEqual(sArg, g_Weapon[i].data_type, false))
+        {
+            UnrestrictTypeWeapon(sArg);
+            found = true;
+            return Plugin_Handled;
+        }
     }
 
     if(!found)
@@ -569,7 +585,7 @@ public void RestrictWeapon(const char[] weapon)
         if(StrEqual(weapon, g_Weapon[i].data_name, false))
         {
             g_Weapon[i].data_restrict = true;
-            PrintToChatAll(" \x04%s\x01 \x05\"%s\" \x01has been restricted", sTag, g_Weapon[i].data_name);
+            PrintToChatAll(" \x04%s\x01 Weapon \x06\"%s\" \x01has been restricted", sTag, g_Weapon[i].data_name);
             return;
         }
     }
@@ -582,10 +598,34 @@ public void UnrestrictWeapon(const char[] weapon)
         if(StrEqual(weapon, g_Weapon[i].data_name, false))
         {
             g_Weapon[i].data_restrict = false;
-            PrintToChatAll(" \x04%s\x01 \x05\"%s\" \x01has been unrestricted.", sTag, g_Weapon[i].data_name);
+            PrintToChatAll(" \x04%s\x01 Weapon \x06\"%s\" \x01has been unrestricted.", sTag, g_Weapon[i].data_name);
             return;
         }
     }
+}
+
+public void RestrictTypeWeapon(const char[] weapontype)
+{
+    for(int i = 0; i < g_iTotal; i++)
+    {
+        if(StrEqual(weapontype, g_Weapon[i].data_type, false))
+        {
+            g_Weapon[i].data_restrict = true;
+        }
+    }
+    PrintToChatAll(" \x04%s\x01 Weapon-Type \x06\"%s\" \x01has been unrestricted.", sTag, weapontype);
+}
+
+public void UnrestrictTypeWeapon(const char[] weapontype)
+{
+    for(int i = 0; i < g_iTotal; i++)
+    {
+        if(StrEqual(weapontype, g_Weapon[i].data_type, false))
+        {
+            g_Weapon[i].data_restrict = false;
+        }
+    }
+    PrintToChatAll(" \x04%s\x01 Weapon-Type \x06\"%s\" \x01has been unrestricted.", sTag, weapontype);
 }
 
 public void Toggle_RestrictWeapon(const char[] weapon)
@@ -598,11 +638,11 @@ public void Toggle_RestrictWeapon(const char[] weapon)
 
             if(g_Weapon[i].data_restrict == true)
             {
-                PrintToChatAll(" \x04%s\x01 \x05\"%s\" \x01has been restricted.", sTag, g_Weapon[i].data_name);
+                PrintToChatAll(" \x04%s\x01 Weapon \x06\"%s\" \x01has been restricted.", sTag, g_Weapon[i].data_name);
             }
             else
             {
-                PrintToChatAll(" \x04%s\x01 \x05\"%s\" \x01has been unrestricted.", sTag, g_Weapon[i].data_name);
+                PrintToChatAll(" \x04%s\x01 Weapon \x06\"%s\" \x01has been unrestricted.", sTag, g_Weapon[i].data_name);
             }
             return;
         }
@@ -896,7 +936,7 @@ public void PurchaseWeapon(int client, const char[] entity)
         {
             if(g_Weapon[i].data_restrict == true)
             {
-                PrintToChat(client, " \x04%s\x01 \x04\"%s\" has been restricted.", sTag, g_Weapon[i].data_name);
+                PrintToChat(client, " \x04%s\x01 Weapon \x06\"%s\" \x01has been restricted.", sTag, g_Weapon[i].data_name);
                 return;
             }
 
@@ -982,9 +1022,10 @@ public void PurchaseWeapon(int client, const char[] entity)
                 #if defined SMRPG_ARMOR
                 int armorvalue = SMRPG_Armor_GetClientMaxArmor(client);
                 SetEntProp(client, Prop_Send, "m_ArmorValue", armorvalue);
+                #else
+                SetEntProp(client, Prop_Send, "m_ArmorValue", 100);
                 #endif
 
-                SetEntProp(client, Prop_Send, "m_ArmorValue", 100);
                 SetEntProp(client, Prop_Send, "m_bHasHelmet", 1);
                 SetEntProp(client, Prop_Send, "m_iAccount", cash - totalprice);
                 SetPurchaseCount(client, g_Weapon[i].data_name, 1, true);
