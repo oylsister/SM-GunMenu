@@ -5,8 +5,9 @@
 #include <sdktools>
 #include <sdkhooks>
 #include <clientprefs>
+#include <gun_menu>
 
-//#define ZRIOT //You can add '//' on this if you're not gonna use for Zriot or Zombie:Reloaded
+#define ZOMBIERELOADED //You can add '//' on this if you're not gonna use for Zriot or Zombie:Reloaded
 //#define SMRPG_ARMOR
 
 #if defined ZRIOT
@@ -73,6 +74,9 @@ Handle g_hRebuyCookies = INVALID_HANDLE;
 
 bool g_bAutoRebuy[MAXPLAYERS+1];
 
+// Forward
+GlobalForward g_hOnClientPurchase;
+
 public Plugin myinfo = 
 {
     name = "[CSGO/CSS] Gun Menu",
@@ -134,6 +138,11 @@ public void OnPluginStart()
     }
 
     AutoExecConfig();
+}
+
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
+{
+    g_hOnClientPurchase = CreateGlobalForward("GunMenu_OnClientPurchase", ET_Hook, Param_CellByRef, Param_String);
 }
 
 public void OnClientPutInServer(int client)
@@ -902,6 +911,13 @@ public int SelectMenuHandler(Menu menu, MenuAction action, int param1, int param
 
 public void PurchaseWeapon(int client, const char[] entity)
 {
+    Action result = ForwardOnClientPurchase(client, entity);
+
+    if(result == Plugin_Handled)
+    {
+        return;
+    }
+
     if(!IsPlayerAlive(client))
     {
         PrintToChat(client, " \x04%s\x01 You must be alive to purchase the weapon.", sTag);
@@ -1086,6 +1102,7 @@ public void PurchaseWeapon(int client, const char[] entity)
             return;
         }
     }
+    return;
 }
 
 public void ClientLoadoutMenu(int client)
@@ -1732,6 +1749,18 @@ int GetWeaponPurchaseMax(const char[] weaponname)
         }
     }
     return maxpurchase;
+}
+
+Action ForwardOnClientPurchase(int client, const char[] weaponentity)
+{
+    Call_StartForward(g_hOnClientPurchase);
+
+    Call_PushCell(client);
+    Call_PushString(weaponentity);
+
+    Action result;
+    Call_Finish(result);
+    return result;
 }
 
 stock bool IsClientAdmin(int client)
