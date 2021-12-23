@@ -7,20 +7,10 @@
 #include <clientprefs>
 #include <gun_menu>
 
-#define ZOMBIERELOADED //You can add '//' on this if you're not gonna use for Zriot or Zombie:Reloaded
-//#define SMRPG_ARMOR
-
-#if defined ZRIOT
+#undef REQUIRE_PLUGIN
 #include <zriot>
-#endif
-
-#if defined ZOMBIERELOADED
 #include <zombiereloaded>
-#endif
-
-#if defined SMRPG_ARMOR
 #include <smrpg_armorplus>
-#endif
 
 #pragma newdecls required
 
@@ -82,7 +72,7 @@ public Plugin myinfo =
     name = "[CSGO/CSS] Gun Menu",
     author = "Oylsister",
     description = "Purchase weapon from the menu and create specific command to purchase specific weapon",
-    version = "1.2",
+    version = "2.0",
     url = "https://github.com/oylsister/SM-GunMenu"
 };
 
@@ -142,7 +132,11 @@ public void OnPluginStart()
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
-    g_hOnClientPurchase = CreateGlobalForward("GunMenu_OnClientPurchase", ET_Hook, Param_CellByRef, Param_String);
+    g_hOnClientPurchase = CreateGlobalForward("GunMenu_OnClientPurchase", ET_Hook, Param_Cell, Param_String);
+
+    MarkNativeAsOptional("ZR_IsClientZombie");
+    MarkNativeAsOptional("ZRiot_IsClientZombie");
+    
 }
 
 public void OnClientPutInServer(int client)
@@ -682,6 +676,31 @@ public Action GetSlotCommand(int client, int args)
 
 public Action Command_GunMenu(int client, int args)
 {
+    if(args == 0)
+    {
+        GunMenu(client);
+        return Plugin_Handled;
+    }
+    
+    char command[64];
+    GetCmdArg(1, command, sizeof(command));
+
+    for (int i = 0; i < g_iTotal; i++)
+    {
+        if(StrEqual(command, g_Weapon[i].data_name, false))
+        {
+            PurchaseWeapon(client, g_Weapon[i].data_entity);
+            return Plugin_Handled;
+        }
+    }
+
+    ReplyToCommand(client, " \x04%s\x01 Could not find any weapon name \"%s\".", sTag, command);
+    GunMenu(client);
+    return Plugin_Handled;
+}
+
+public void GunMenu(int client)
+{
     Menu menu = new Menu(MainMenuHandler, MENU_ACTIONS_ALL);
     menu.SetTitle("%s Main Menu", sTag);
     menu.AddItem("buy", "Buy Weapon");
@@ -918,27 +937,27 @@ public void PurchaseWeapon(int client, const char[] entity)
         return;
     }
 
+    bool zombiereloaded = (GetFeatureStatus(FeatureType_Native, "ZR_IsClientZombie") == FeatureStatus_Available);
+    bool zombieriot = (GetFeatureStatus(FeatureType_Native, "ZRiot_IsClientZombie") == FeatureStatus_Available);
+    bool smrpg_armor = (GetFeatureStatus(FeatureType_Native, "SMRPG_Armor_GetClientMaxArmor") == FeatureStatus_Available);
+
     if(!IsPlayerAlive(client))
     {
         PrintToChat(client, " \x04%s\x01 You must be alive to purchase the weapon.", sTag);
         return;
     }
 
-    #if defined ZRIOT
-    if(ZRiot_IsClientZombie(client))
+    if(zombieriot && ZRiot_IsClientZombie(client))
     {
         PrintToChat(client, " \x04%s\x01 You must be Human to purchase the weapon.", sTag);
         return;
     }
-    #endif
 
-    #if defined ZOMBIERELOADED
-    if(ZR_IsClientZombie(client))
+    if(zombiereloaded && ZR_IsClientZombie(client))
     {
         PrintToChat(client, " \x04%s\x01 You must be Human to purchase the weapon.", sTag);
         return;
     }
-    #endif
 
     if(g_bBuyZoneOnly && !IsClientInBuyZone(client))
     {
@@ -1035,12 +1054,15 @@ public void PurchaseWeapon(int client, const char[] entity)
                     }
                 }
 
-                #if defined SMRPG_ARMOR
-                int armorvalue = SMRPG_Armor_GetClientMaxArmor(client);
-                SetEntProp(client, Prop_Send, "m_ArmorValue", armorvalue);
-                #else
-                SetEntProp(client, Prop_Send, "m_ArmorValue", 100);
-                #endif
+                if(smrpg_armor)
+                {
+                    int armorvalue = SMRPG_Armor_GetClientMaxArmor(client);
+                    SetEntProp(client, Prop_Send, "m_ArmorValue", armorvalue);
+                }
+                else
+                {
+                    SetEntProp(client, Prop_Send, "m_ArmorValue", 100);
+                }
 
                 SetEntProp(client, Prop_Send, "m_bHasHelmet", 1);
                 SetEntProp(client, Prop_Send, "m_iAccount", cash - totalprice);
@@ -1575,8 +1597,6 @@ public void RestrictMenu(int client)
     menu.AddItem("primary", "Primary Weapon");
     menu.AddItem("secondary", "Secondary Weapon");
     menu.AddItem("grenade", "Grenade");
-    menu.AddItem("throwable", "Throwable");
-    menu.AddItem("fire", "Fire Grenade");
     menu.ExitBackButton = true;
     menu.ExitButton = true;
     menu.Display(client, MENU_TIME_FOREVER);
