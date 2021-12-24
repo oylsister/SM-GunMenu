@@ -45,6 +45,7 @@ bool g_bHookBuyZone = true;
 bool g_bAllowLoadout = true;
 bool g_bCommandInitialized = false;
 bool g_bMenuCommandInitialized = false;
+bool g_bSaveOnMenuCommand;
 
 char sTag[64];
 
@@ -53,6 +54,7 @@ ConVar g_Cvar_Command;
 ConVar g_Cvar_PluginTag;
 ConVar g_Cvar_HookOnBuyZone;
 ConVar g_Cvar_ConfigPath;
+ConVar g_Cvar_SaveOnMenuCommand;
 
 char g_sConfigPath[PLATFORM_MAX_PATH];
 
@@ -83,6 +85,7 @@ public void OnPluginStart()
     g_Cvar_PluginTag = CreateConVar("sm_gunmenu_prefix", "[ZBuy]", "Prefix for plugin");
     g_Cvar_HookOnBuyZone = CreateConVar("sm_gunmenu_hookbuyzone", "1.0", "Also apply purchase method to player purchase with default buy menu from buyzone", _, true, 0.0, true, 1.0);
     g_Cvar_ConfigPath = CreateConVar("sm_gunmenu_configpath", "configs/gun_menu.txt", "Specify the path of config file for gun menu");
+    g_Cvar_SaveOnMenuCommand = CreateConVar("sm_gunmenu_saveloadout_onmenu", "1.0", "Save weapon loadout when player do !zbuy <weaponname>", _, true, 0.0, true, 1.0);
 
     RegAdminCmd("sm_restrict", Command_Restrict, ADMFLAG_GENERIC);
     RegAdminCmd("sm_unrestrict", Command_Unrestrict, ADMFLAG_GENERIC);
@@ -683,20 +686,100 @@ public Action Command_GunMenu(int client, int args)
     }
     
     char command[64];
+    char weaponcommand[64];
+    char weaponentity[64];
+
     GetCmdArg(1, command, sizeof(command));
+
+    int slot;
 
     for (int i = 0; i < g_iTotal; i++)
     {
+        // Looking from weapon command
+        Format(weaponcommand, sizeof(weaponcommand), g_Weapon[i].data_command);
+        ReplaceString(weaponcommand, sizeof(weaponcommand), "sm_", "", false);
+
+        if(FindCharInString(weaponcommand, ',') != -1)
+        {
+            int idx;
+            int lastidx;
+            while((idx = FindCharInString(weaponcommand[lastidx], ',')) != -1)
+            {
+                if(!strncmp(command, weaponcommand[lastidx], idx))
+                {
+                    Format(weaponentity, sizeof(weaponentity), "%s", g_Weapon[i].data_entity);
+                    PurchaseWeapon(client, weaponentity);
+                    if(g_bSaveOnMenuCommand)
+                    {
+                        slot = g_Weapon[i].data_slot;
+                        SaveLoadoutCookie(client, slot, g_Weapon[i].data_name);
+                    }
+                    return Plugin_Stop;
+                }
+                lastidx += ++idx;
+
+                if(FindCharInString(weaponcommand[lastidx], ',') == -1 && weaponcommand[lastidx+1] != '\0')
+                {
+                    if(!strncmp(command, weaponcommand[lastidx], idx))
+                    {
+                        Format(weaponentity, sizeof(weaponentity), "%s", g_Weapon[i].data_entity);
+                        PurchaseWeapon(client, weaponentity);  
+                        if(g_bSaveOnMenuCommand)
+                        {
+                            slot = g_Weapon[i].data_slot;
+                            SaveLoadoutCookie(client, slot, g_Weapon[i].data_name);
+                        }
+                        return Plugin_Stop;
+                    }
+                }
+            }
+        }
+        else
+        {
+            if(StrEqual(command, weaponcommand))
+            {
+                Format(weaponentity, sizeof(weaponentity), "%s", g_Weapon[i].data_entity);
+                PurchaseWeapon(client, weaponentity);
+                if(g_bSaveOnMenuCommand)
+                {
+                    slot = g_Weapon[i].data_slot;
+                    SaveLoadoutCookie(client, slot, g_Weapon[i].data_name);
+                }
+                return Plugin_Stop;
+            }
+        }
+
+        // Looking from entity name
+        Format(weaponentity, sizeof(weaponentity), g_Weapon[i].data_entity);
+        ReplaceString(weaponentity, sizeof(weaponentity), "weapon_", "", false);
+
+        if(StrEqual(command, weaponentity, false))
+        {
+            PurchaseWeapon(client, g_Weapon[i].data_entity);
+            if(g_bSaveOnMenuCommand)
+            {
+                slot = g_Weapon[i].data_slot;
+                SaveLoadoutCookie(client, slot, g_Weapon[i].data_name);
+            }
+            return Plugin_Stop;
+        }
+
+        // Looking from weapon name
         if(StrEqual(command, g_Weapon[i].data_name, false))
         {
             PurchaseWeapon(client, g_Weapon[i].data_entity);
-            return Plugin_Handled;
+            if(g_bSaveOnMenuCommand)
+            {
+                slot = g_Weapon[i].data_slot;
+                SaveLoadoutCookie(client, slot, g_Weapon[i].data_name);
+            }
+            return Plugin_Stop;
         }
     }
 
     ReplyToCommand(client, " \x04%s\x01 Could not find any weapon name \"%s\".", sTag, command);
     GunMenu(client);
-    return Plugin_Handled;
+    return Plugin_Stop;
 }
 
 public void GunMenu(int client)
