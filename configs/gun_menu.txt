@@ -10,6 +10,7 @@
 		"command"	"sm_glock"
 		"restrict"	"0"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 	"HKP2000"
 	{
@@ -21,6 +22,7 @@
 		"command"	"sm_p2000"
 		"restrict"	"0"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 	"USP"
 	{
@@ -32,6 +34,7 @@
 		"command"	"sm_usp"
 		"restrict"	"0"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 	"Elite"
 	{
@@ -43,6 +46,7 @@
 		"command"	"sm_elite"
 		"restrict"	"0"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 	"P250"
 	{
@@ -54,6 +58,7 @@
 		"command"	"sm_p250"
 		"restrict"	"0"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 	"CZ95"
 	{
@@ -65,6 +70,7 @@
 		"command"	"sm_cz,sm_cz75"
 		"restrict"	"0"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 	"Fiveseven"
 	{
@@ -76,6 +82,7 @@
 		"command"	"sm_57,sm_fiveseven"
 		"restrict"	"0"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 	"Tec9"
 	{
@@ -87,6 +94,7 @@
 		"command"	"sm_tec9"
 		"restrict"	"0"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 	"Deagle"
 	{
@@ -98,6 +106,7 @@
 		"command"	"sm_deagle"
 		"restrict"	"0"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 	"Revolver"
 	{
@@ -109,6 +118,7 @@
 		"command"	"sm_revolver,sm_r8"
 		"restrict"	"0"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 	
 	// Primary
@@ -122,6 +132,7 @@
 		"command"	"sm_m249"
 		"restrict"	"0"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 	"Negev"
 	{
@@ -133,6 +144,7 @@
 		"command"	"sm_negev"
 		"restrict"	"0"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 	"AK47"
 	{
@@ -144,6 +156,7 @@
 		"command"	"sm_ak,sm_ak47"
 		"restrict"	"0"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 	"M4A1-S"
 	{
@@ -155,6 +168,7 @@
 		"command"	"sm_m4a1s,sm_m4s"
 		"restrict"	"0"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 	"M4A4"
 	{
@@ -166,6 +180,7 @@
 		"command"	"sm_m4a4"
 		"restrict"	"0"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 	"P90"
 	{
@@ -177,6 +192,7 @@
 		"command"	"sm_p90"
 		"restrict"	"0"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 	"Bizon"
 	{
@@ -188,6 +204,7 @@
 		"command"	"sm_bizon,sm_pp"
 		"restrict"	"0"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 	"AUG"
 	{
@@ -199,6 +216,7 @@
 		"command"	"sm_aug"
 		"restrict"	"0"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 	"SG556"
 	{
@@ -210,6 +228,7 @@
 		"command"	"sm_sg556"
 		"restrict"	"0"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 	"Nova"
 	{
@@ -221,6 +240,7 @@
 		"command"	"sm_nova"
 		"restrict"	"0"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 	"XM1014"
 	{
@@ -232,6 +252,7 @@
 		"command"	"sm_xm1014,sm_xm10"
 		"restrict"	"0"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 	"Mag7"
 	{
@@ -243,6 +264,7 @@
 		"command"	"sm_mag7"
 		"restrict"	"0"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 	"Sawed-off"
 	{
@@ -254,6 +276,7 @@
 		"command"	"sm_sawedoff"
 		"restrict"	"0"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 	"Mac10"
 	{
@@ -265,6 +288,7 @@
 		"command"	"sm_mac10"
 		"restrict"	"0"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 	"MP9"
 	{
@@ -276,6 +300,7 @@
 		"command"	"sm_mp9"
 		"restrict"	"0"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 	"UMP45"
 	{
@@ -287,6 +312,7 @@
 		"command"	"sm_ump,sm_ump45"
 		"restrict"	"0"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 	"MP7"
 	{
@@ -298,6 +324,7 @@
 		"command"	"sm_mp7"
 		"restrict"	"0"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 	"MP5SD"
 	{
@@ -309,6 +336,7 @@
 		"command"	"sm_mp5"
 		"restrict"	"0"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 	"Famas"
 	{
@@ -320,6 +348,7 @@
 		"command"	"sm_famas"
 		"restrict"	"0"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 	"Galil-AR"
 	{
@@ -331,6 +360,7 @@
 		"command"	"sm_galil"
 		"restrict"	"0"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 	"SSG08"
 	{
@@ -342,6 +372,7 @@
 		"command"	"sm_ssg08,sm_scout"
 		"restrict"	"0"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 	"AWP"
 	{
@@ -353,6 +384,7 @@
 		"command"	"sm_awp"
 		"restrict"	"0"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 	"Scar-20"
 	{
@@ -364,6 +396,7 @@
 		"command"	"sm_scar,sm_scar20"
 		"restrict"	"0"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 	"G3SG1"
 	{
@@ -375,6 +408,7 @@
 		"command"	"sm_g3sg1"
 		"restrict"	"0"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 	
 	// Grenade
@@ -388,6 +422,7 @@
 		"command"	"sm_he"
 		"restrict"	"0"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 	"IncGrenade"
 	{
@@ -399,6 +434,7 @@
 		"command"	"sm_inc"
 		"restrict"	"0"
 		"maxpurchase"	"3"
+		"cooldown"	"0.0"
 	}
 	"Molotov"
 	{
@@ -410,6 +446,7 @@
 		"command"	"sm_molotov,sm_molo,sm_mol"
 		"restrict"	"0"
 		"maxpurchase"	"3"
+		"cooldown"	"0.0"
 	}
 	"Decoy"
 	{
@@ -421,6 +458,7 @@
 		"command"	"sm_decoy"
 		"restrict"	"1"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 	"Flashbang"
 	{
@@ -432,6 +470,7 @@
 		"command"	"sm_flash"
 		"restrict"	"1"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 	"Smokegrenade"
 	{
@@ -443,6 +482,7 @@
 		"command"	"sm_smoke"
 		"restrict"	"1"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 	"TAGrenade"
 	{
@@ -454,6 +494,7 @@
 		"command"	"sm_ta"
 		"restrict"	"1"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 	"Kevlar"
 	{
@@ -465,5 +506,6 @@
 		"command"	"sm_kev,sm_kevlar"
 		"restrict"	"0"
 		"maxpurchase"	"0"
+		"cooldown"	"0.0"
 	}
 }

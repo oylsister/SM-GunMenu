@@ -10,6 +10,7 @@ Purchase weapon through command and menu with customizable config for gun comman
 - Allowing Customize more than 1 command for menu.
 - Maximum Purchase for each weapon.
 - Multi Price on Second Purchase for each weapon.
+- Cooldown purchase for each weapon.
 
 ## Convar
 ```
@@ -57,6 +58,7 @@ sm_gunmenu_configpath "configs/gun_menu.txt"
     "command"	"sm_glock"  // Command for Purchase this specific weapon
     "restrict"	"0"     // Restrict This gun or not
     "maxpurchase" "0"  // Maximum purchase in that round (0: No Maximum)
+    "cooldown"	"0.0" // Cooldown after you purchase this weapon (0.0 = No cooldown)
   }
 }
 ```
