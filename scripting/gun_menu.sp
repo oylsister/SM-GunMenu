@@ -1256,7 +1256,15 @@ public void PurchaseWeapon(int client, const char[] entity, bool loadout)
             }
 
             SetEntProp(client, Prop_Send, "m_iAccount", cash - totalprice);
-            GivePlayerItem(client, g_Weapon[i].data_entity);
+            if(StrEqual(g_Weapon[i].data_entity, "weapon_hkp2000", false))
+            {
+                GivePlayerItem2(client, g_Weapon[i].data_entity);
+            }
+            else
+            {
+                GivePlayerItem(client, g_Weapon[i].data_entity);
+            }
+            
             SetPurchaseCount(client, g_Weapon[i].data_name, 1, true);
 
             if(cooldown > 0)
@@ -1946,4 +1954,22 @@ stock bool IsClientAdmin(int client)
 stock bool IsClientInBuyZone(int client)
 {
     return view_as<bool>(GetEntProp(client, Prop_Send,"m_bInBuyZone"));
+}
+
+stock void GivePlayerItem2(int client, const char[] weaponentity)
+{
+    int team = GetClientTeam(client);
+    switch (team)
+    {
+        case 2:
+        {
+            SetEntProp(client, Prop_Send, "m_iTeamNum", 3);
+        }
+        case 3:
+        {
+            SetEntProp(client, Prop_Send, "m_iTeamNum", 2);
+        }
+    }
+    GivePlayerItem(client, weaponentity);
+    SetEntProp(client, Prop_Send, "m_iTeamNum", team);
 }
