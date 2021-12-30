@@ -535,6 +535,11 @@ public void OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
     {
         ClearTrie(g_hPurchaseCooldown[client]);
     }
+
+    for(int x = 0; x < g_iTotal; x++)
+    {
+        SetTrieValue(g_hPurchaseCooldown[client], g_Weapon[x].data_name, 0.0, true);
+    }
 }
 
 public Action Command_Restrict(int client, int args)
