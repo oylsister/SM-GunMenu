@@ -469,7 +469,7 @@ public Action WeaponBuyCommand(int client, int args)
                 if(!strncmp(command, weaponcommand[lastidx], idx))
                 {
                     Format(weaponentity, sizeof(weaponentity), "%s", g_Weapon[i].data_entity);
-                    PurchaseWeapon(client, weaponentity);
+                    PurchaseWeapon(client, weaponentity, false);
                     return Plugin_Stop;
                 }
                 lastidx += ++idx;
@@ -479,7 +479,7 @@ public Action WeaponBuyCommand(int client, int args)
                     if(!strncmp(command, weaponcommand[lastidx], idx))
                     {
                         Format(weaponentity, sizeof(weaponentity), "%s", g_Weapon[i].data_entity);
-                        PurchaseWeapon(client, weaponentity);  
+                        PurchaseWeapon(client, weaponentity, false);  
                         return Plugin_Stop;
                     }
                 }
@@ -490,7 +490,7 @@ public Action WeaponBuyCommand(int client, int args)
             if(StrEqual(command, weaponcommand))
             {
                 Format(weaponentity, sizeof(weaponentity), "%s", g_Weapon[i].data_entity);
-                PurchaseWeapon(client, weaponentity);
+                PurchaseWeapon(client, weaponentity, false);
                 return Plugin_Stop;
             }
         }
@@ -510,7 +510,7 @@ public Action CS_OnBuyCommand(int client, const char[] weapon)
 
             if(StrEqual(weapon, reformat, false))
             {
-                PurchaseWeapon(client, g_Weapon[i].data_entity);
+                PurchaseWeapon(client, g_Weapon[i].data_entity, false);
                 return Plugin_Handled;
             }
         }
@@ -740,7 +740,7 @@ public Action Command_GunMenu(int client, int args)
                 if(!strncmp(command, weaponcommand[lastidx], idx))
                 {
                     Format(weaponentity, sizeof(weaponentity), "%s", g_Weapon[i].data_entity);
-                    PurchaseWeapon(client, weaponentity);
+                    PurchaseWeapon(client, weaponentity, false);
                     if(g_bSaveOnMenuCommand)
                     {
                         slot = g_Weapon[i].data_slot;
@@ -755,7 +755,7 @@ public Action Command_GunMenu(int client, int args)
                     if(!strncmp(command, weaponcommand[lastidx], idx))
                     {
                         Format(weaponentity, sizeof(weaponentity), "%s", g_Weapon[i].data_entity);
-                        PurchaseWeapon(client, weaponentity);  
+                        PurchaseWeapon(client, weaponentity, false);  
                         if(g_bSaveOnMenuCommand)
                         {
                             slot = g_Weapon[i].data_slot;
@@ -771,7 +771,7 @@ public Action Command_GunMenu(int client, int args)
             if(StrEqual(command, weaponcommand))
             {
                 Format(weaponentity, sizeof(weaponentity), "%s", g_Weapon[i].data_entity);
-                PurchaseWeapon(client, weaponentity);
+                PurchaseWeapon(client, weaponentity, false);
                 if(g_bSaveOnMenuCommand)
                 {
                     slot = g_Weapon[i].data_slot;
@@ -787,7 +787,7 @@ public Action Command_GunMenu(int client, int args)
 
         if(StrEqual(command, weaponentity, false))
         {
-            PurchaseWeapon(client, g_Weapon[i].data_entity);
+            PurchaseWeapon(client, g_Weapon[i].data_entity, false);
             if(g_bSaveOnMenuCommand)
             {
                 slot = g_Weapon[i].data_slot;
@@ -799,7 +799,7 @@ public Action Command_GunMenu(int client, int args)
         // Looking from weapon name
         if(StrEqual(command, g_Weapon[i].data_name, false))
         {
-            PurchaseWeapon(client, g_Weapon[i].data_entity);
+            PurchaseWeapon(client, g_Weapon[i].data_entity, false);
             if(g_bSaveOnMenuCommand)
             {
                 slot = g_Weapon[i].data_slot;
@@ -1027,7 +1027,7 @@ public int SelectMenuHandler(Menu menu, MenuAction action, int param1, int param
             {
                 if(StrEqual(info, g_Weapon[i].data_name, false))
                 {
-                    PurchaseWeapon(param1, g_Weapon[i].data_entity);
+                    PurchaseWeapon(param1, g_Weapon[i].data_entity, false);
                 }
             }
         }
@@ -1043,7 +1043,7 @@ public int SelectMenuHandler(Menu menu, MenuAction action, int param1, int param
     return 0;
 }
 
-public void PurchaseWeapon(int client, const char[] entity)
+public void PurchaseWeapon(int client, const char[] entity, bool loadout)
 {
     Action result = ForwardOnClientPurchase(client, entity);
 
@@ -1142,39 +1142,42 @@ public void PurchaseWeapon(int client, const char[] entity)
 
             if(StrEqual(entity, "weapon_kevlar"))
             {
-                if(!ismulti)
+                if(!loadout)
                 {
-                    if(purchasemax == 0)
+                    if(!ismulti)
                     {
-                        PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01. Select weapon from menu or use command to purchase again.", sTag, g_Weapon[i].data_name);
-                    }
-                    else
-                    {
-                        PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01. You can only purchase this item again \x06%i\x01 times.", sTag, g_Weapon[i].data_name, purchaseleft);
-                    }
-                }
-                else
-                {
-                    if(purchasemax == 0)
-                    {
-                        if(purchasecount > 0)
+                        if(purchasemax == 0)
                         {
-                            PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01 for \x06%i$\x01 because you re-purchase this weapon again.", sTag, g_Weapon[i].data_name, totalprice);
+                            PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01. Select weapon from menu or use command to purchase again.", sTag, g_Weapon[i].data_name);
                         }
                         else
                         {
-                            PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01. Next time it will cost \x06\"x%0.2f\" \x01from original price to purchase.", sTag, g_Weapon[i].data_name, multiprice);
+                            PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01. You can only purchase this item again \x06%i\x01 times.", sTag, g_Weapon[i].data_name, purchaseleft);
                         }
                     }
                     else
                     {
-                        if(purchasecount > 0)
+                        if(purchasemax == 0)
                         {
-                            PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01 for \x06%i$\x01 because you re-purchase this weapon again. And you only can purchase this item again \x06%i\x01 times.", sTag, g_Weapon[i].data_name, totalprice, purchaseleft);
+                            if(purchasecount > 0)
+                            {
+                                PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01 for \x06%i$\x01 because you re-purchase this weapon again.", sTag, g_Weapon[i].data_name, totalprice);
+                            }
+                            else
+                            {
+                                PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01. Next time it will cost \x06\"x%0.2f\" \x01from original price to purchase.", sTag, g_Weapon[i].data_name, multiprice);
+                            }
                         }
                         else
                         {
-                            PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01. Next time it will cost \x06\"x%0.2f\"\x01 from original price to purchase. And you only can purchase this item again \x06%i\x01 times.", sTag, g_Weapon[i].data_name, multiprice, purchaseleft);
+                            if(purchasecount > 0)
+                            {
+                                PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01 for \x06%i$\x01 because you re-purchase this weapon again. And you only can purchase this item again \x06%i\x01 times.", sTag, g_Weapon[i].data_name, totalprice, purchaseleft);
+                            }
+                            else
+                            {
+                                PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01. Next time it will cost \x06\"x%0.2f\"\x01 from original price to purchase. And you only can purchase this item again \x06%i\x01 times.", sTag, g_Weapon[i].data_name, multiprice, purchaseleft);
+                            }
                         }
                     }
                 }
@@ -1212,39 +1215,42 @@ public void PurchaseWeapon(int client, const char[] entity)
                 }
             }
 
-            if(!ismulti)
+            if(!loadout)
             {
-                if(purchasemax == 0)
+                if(!ismulti)
                 {
-                    PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01. Select weapon from menu or use command to purchase again.", sTag, g_Weapon[i].data_name);
-                }
-                else
-                {
-                    PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01. You can only purchase this item again \x06%i\x01 times.", sTag, g_Weapon[i].data_name, purchaseleft);
-                }
-            }
-            else
-            {
-                if(purchasemax == 0)
-                {
-                    if(purchasecount > 0)
+                    if(purchasemax == 0)
                     {
-                        PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01 for \x06%i$\x01 because you re-purchase this weapon again.", sTag, g_Weapon[i].data_name, totalprice);
+                        PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01. Select weapon from menu or use command to purchase again.", sTag, g_Weapon[i].data_name);
                     }
                     else
                     {
-                        PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01. Next time it will cost \x06\"x%0.2f\"\x01 from original price to purchase.", sTag, g_Weapon[i].data_name, multiprice);
+                        PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01. You can only purchase this item again \x06%i\x01 times.", sTag, g_Weapon[i].data_name, purchaseleft);
                     }
                 }
                 else
                 {
-                    if(purchasecount > 0)
+                    if(purchasemax == 0)
                     {
-                        PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01 for \x06%i$\x01 because you re-purchase this weapon again. And you only can purchase this item again \x06%i\x01 times.", sTag, g_Weapon[i].data_name, totalprice, purchaseleft);
+                        if(purchasecount > 0)
+                        {
+                            PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01 for \x06%i$\x01 because you re-purchase this weapon again.", sTag, g_Weapon[i].data_name, totalprice);
+                        }
+                        else
+                        {
+                            PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01. Next time it will cost \x06\"x%0.2f\"\x01 from original price to purchase.", sTag, g_Weapon[i].data_name, multiprice);
+                        }
                     }
                     else
                     {
-                        PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01. Next time it will cost \x06\"x%0.2f\"\x01 from original price to purchase. And you only can purchase this item again \x06%i\x01 times.", sTag, g_Weapon[i].data_name, multiprice, purchaseleft);
+                        if(purchasecount > 0)
+                        {
+                            PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01 for \x06%i$\x01 because you re-purchase this weapon again. And you only can purchase this item again \x06%i\x01 times.", sTag, g_Weapon[i].data_name, totalprice, purchaseleft);
+                        }
+                        else
+                        {
+                            PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01. Next time it will cost \x06\"x%0.2f\"\x01 from original price to purchase. And you only can purchase this item again \x06%i\x01 times.", sTag, g_Weapon[i].data_name, multiprice, purchaseleft);
+                        }
                     }
                 }
             }
@@ -1392,6 +1398,7 @@ void BuySavedLoadout(int client, bool spawn)
         {
             continue;
         }
+
         for(int x = 0; x < g_iTotal; x++)
         {
             if(StrEqual(weaponname, g_Weapon[x].data_name, false))
@@ -1400,14 +1407,12 @@ void BuySavedLoadout(int client, bool spawn)
                 {
                     if(!StrEqual(weaponentity, g_Weapon[x].data_entity))
                     {
-                        PurchaseWeapon(client, g_Weapon[x].data_entity);
-                        return;
+                        PurchaseWeapon(client, g_Weapon[x].data_entity, true);
                     }
                 }
                 else
                 {
-                    PurchaseWeapon(client, g_Weapon[x].data_entity);
-                    return;
+                    PurchaseWeapon(client, g_Weapon[x].data_entity, true);
                 }
             }
         }
