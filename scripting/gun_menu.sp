@@ -22,6 +22,10 @@
 
 #define WEAPON_SLOT_MAX 4
 
+#define BYPASS_COUNT 0
+#define BYBASS_PRICE 1
+#define BYPASS_RESTRICT 2
+
 enum struct Weapon_Data
 {
     char data_name[64];
@@ -35,6 +39,7 @@ enum struct Weapon_Data
     bool data_restrict;
     int data_maxpurchase;
     float data_cooldown;
+    bool data_freeatspawn;
 }
 
 int g_iTotal;
@@ -56,6 +61,7 @@ ConVar g_Cvar_PluginTag;
 ConVar g_Cvar_HookOnBuyZone;
 ConVar g_Cvar_ConfigPath;
 ConVar g_Cvar_SaveOnMenuCommand;
+ConVar g_Cvar_FreeOnSpawn;
 
 char g_sConfigPath[PLATFORM_MAX_PATH];
 
@@ -67,6 +73,10 @@ Handle g_hWeaponCookies[WEAPON_SLOT_MAX] = INVALID_HANDLE;
 Handle g_hRebuyCookies = INVALID_HANDLE;
 
 bool g_bAutoRebuy[MAXPLAYERS+1];
+
+bool g_iClientBypassPrice[MAXPLAYERS+1][64];
+bool g_iClientBypassCount[MAXPLAYERS+1][64];
+bool g_iClientBypassRestrict[MAXPLAYERS+1][64];
 
 // Forward
 GlobalForward g_hOnClientPurchase;
@@ -88,6 +98,7 @@ public void OnPluginStart()
     g_Cvar_HookOnBuyZone = CreateConVar("sm_gunmenu_hookbuyzone", "1.0", "Also apply purchase method to player purchase with default buy menu from buyzone", _, true, 0.0, true, 1.0);
     g_Cvar_ConfigPath = CreateConVar("sm_gunmenu_configpath", "configs/gun_menu.txt", "Specify the path of config file for gun menu");
     g_Cvar_SaveOnMenuCommand = CreateConVar("sm_gunmenu_saveloadout_onmenu", "1.0", "Save weapon loadout when player do !zbuy <weaponname>", _, true, 0.0, true, 1.0);
+    g_Cvar_FreeOnSpawn = CreateConVar("sm_gunmenu_freeonspawn", "1.0", "Allow player to get their weapon on spawn for free", _, true, 0.0, true, 1.0);
 
     RegAdminCmd("sm_restrict", Command_Restrict, ADMFLAG_GENERIC);
     RegAdminCmd("sm_unrestrict", Command_Unrestrict, ADMFLAG_GENERIC);
@@ -131,6 +142,8 @@ public void OnPluginStart()
         {
             OnClientCookiesCached(i);
         }
+
+        OnClientPutInServer(i);
     }
 
     AutoExecConfig();
@@ -160,6 +173,13 @@ public void OnClientPutInServer(int client)
         CloseHandle(g_hPurchaseCooldown[client]);
     }
     g_hPurchaseCooldown[client] = CreateTrie();
+
+    for(int i = 0; i < 64; i ++)
+    {
+        g_iClientBypassCount[client][i] = false;
+        g_iClientBypassPrice[client][i] = false;
+        g_iClientBypassRestrict[client][i] = false;
+    }
 }
 
 public void OnClientDisconnect(int client)
@@ -177,6 +197,13 @@ public void OnClientDisconnect(int client)
         CloseHandle(g_hPurchaseCooldown[client]);
     }
     g_hPurchaseCooldown[client] = INVALID_HANDLE;
+
+    for(int i = 0; i < 64; i ++)
+    {
+        g_iClientBypassCount[client][i] = false;
+        g_iClientBypassPrice[client][i] = false;
+        g_iClientBypassRestrict[client][i] = false;
+    }
 }
 
 public void OnBuyZoneChanged(ConVar cvar, const char[] oldValue, const char[] newValue)
@@ -469,7 +496,7 @@ public Action WeaponBuyCommand(int client, int args)
                 if(!strncmp(command, weaponcommand[lastidx], idx))
                 {
                     Format(weaponentity, sizeof(weaponentity), "%s", g_Weapon[i].data_entity);
-                    PurchaseWeapon(client, weaponentity, false);
+                    PurchaseWeapon(client, weaponentity, false, false);
                     return Plugin_Stop;
                 }
                 lastidx += ++idx;
@@ -479,7 +506,7 @@ public Action WeaponBuyCommand(int client, int args)
                     if(!strncmp(command, weaponcommand[lastidx], idx))
                     {
                         Format(weaponentity, sizeof(weaponentity), "%s", g_Weapon[i].data_entity);
-                        PurchaseWeapon(client, weaponentity, false);  
+                        PurchaseWeapon(client, weaponentity, false, false);  
                         return Plugin_Stop;
                     }
                 }
@@ -490,7 +517,7 @@ public Action WeaponBuyCommand(int client, int args)
             if(StrEqual(command, weaponcommand))
             {
                 Format(weaponentity, sizeof(weaponentity), "%s", g_Weapon[i].data_entity);
-                PurchaseWeapon(client, weaponentity, false);
+                PurchaseWeapon(client, weaponentity, false, false);
                 return Plugin_Stop;
             }
         }
@@ -510,7 +537,7 @@ public Action CS_OnBuyCommand(int client, const char[] weapon)
 
             if(StrEqual(weapon, reformat, false))
             {
-                PurchaseWeapon(client, g_Weapon[i].data_entity, false);
+                PurchaseWeapon(client, g_Weapon[i].data_entity, false, false);
                 return Plugin_Handled;
             }
         }
@@ -740,7 +767,7 @@ public Action Command_GunMenu(int client, int args)
                 if(!strncmp(command, weaponcommand[lastidx], idx))
                 {
                     Format(weaponentity, sizeof(weaponentity), "%s", g_Weapon[i].data_entity);
-                    PurchaseWeapon(client, weaponentity, false);
+                    PurchaseWeapon(client, weaponentity, false, false);
                     if(g_bSaveOnMenuCommand)
                     {
                         slot = g_Weapon[i].data_slot;
@@ -755,7 +782,7 @@ public Action Command_GunMenu(int client, int args)
                     if(!strncmp(command, weaponcommand[lastidx], idx))
                     {
                         Format(weaponentity, sizeof(weaponentity), "%s", g_Weapon[i].data_entity);
-                        PurchaseWeapon(client, weaponentity, false);  
+                        PurchaseWeapon(client, weaponentity, false, false);  
                         if(g_bSaveOnMenuCommand)
                         {
                             slot = g_Weapon[i].data_slot;
@@ -771,7 +798,7 @@ public Action Command_GunMenu(int client, int args)
             if(StrEqual(command, weaponcommand))
             {
                 Format(weaponentity, sizeof(weaponentity), "%s", g_Weapon[i].data_entity);
-                PurchaseWeapon(client, weaponentity, false);
+                PurchaseWeapon(client, weaponentity, false, false);
                 if(g_bSaveOnMenuCommand)
                 {
                     slot = g_Weapon[i].data_slot;
@@ -787,7 +814,7 @@ public Action Command_GunMenu(int client, int args)
 
         if(StrEqual(command, weaponentity, false))
         {
-            PurchaseWeapon(client, g_Weapon[i].data_entity, false);
+            PurchaseWeapon(client, g_Weapon[i].data_entity, false, false);
             if(g_bSaveOnMenuCommand)
             {
                 slot = g_Weapon[i].data_slot;
@@ -799,7 +826,7 @@ public Action Command_GunMenu(int client, int args)
         // Looking from weapon name
         if(StrEqual(command, g_Weapon[i].data_name, false))
         {
-            PurchaseWeapon(client, g_Weapon[i].data_entity, false);
+            PurchaseWeapon(client, g_Weapon[i].data_entity, false, false);
             if(g_bSaveOnMenuCommand)
             {
                 slot = g_Weapon[i].data_slot;
@@ -1027,7 +1054,7 @@ public int SelectMenuHandler(Menu menu, MenuAction action, int param1, int param
             {
                 if(StrEqual(info, g_Weapon[i].data_name, false))
                 {
-                    PurchaseWeapon(param1, g_Weapon[i].data_entity, false);
+                    PurchaseWeapon(param1, g_Weapon[i].data_entity, false, false);
                 }
             }
         }
@@ -1043,8 +1070,9 @@ public int SelectMenuHandler(Menu menu, MenuAction action, int param1, int param
     return 0;
 }
 
-public void PurchaseWeapon(int client, const char[] entity, bool loadout)
+public void PurchaseWeapon(int client, const char[] entity, bool loadout, bool spawn)
 {
+    bool freeonspawn = g_Cvar_FreeOnSpawn.BoolValue;
     Action result = ForwardOnClientPurchase(client, entity);
 
     if(result == Plugin_Handled)
@@ -1134,7 +1162,7 @@ public void PurchaseWeapon(int client, const char[] entity, bool loadout)
                 totalprice = originalprice;
             }
 
-            if(totalprice > cash)
+            if(totalprice > cash && !spawn && !freeonspawn)
             {
                 PrintToChat(client, " \x04%s\x01 You don't have enough cash to purchase this item.", sTag);
                 return;
@@ -1193,7 +1221,10 @@ public void PurchaseWeapon(int client, const char[] entity, bool loadout)
                 }
 
                 SetEntProp(client, Prop_Send, "m_bHasHelmet", 1);
-                SetEntProp(client, Prop_Send, "m_iAccount", cash - totalprice);
+
+                if(!spawn && !freeonspawn)
+                    SetEntProp(client, Prop_Send, "m_iAccount", cash - totalprice);
+
                 SetPurchaseCount(client, g_Weapon[i].data_name, 1, true);
 
                 if(cooldown > 0)
@@ -1255,7 +1286,9 @@ public void PurchaseWeapon(int client, const char[] entity, bool loadout)
                 }
             }
 
-            SetEntProp(client, Prop_Send, "m_iAccount", cash - totalprice);
+            if(!spawn && !freeonspawn)
+                SetEntProp(client, Prop_Send, "m_iAccount", cash - totalprice);
+
             if(StrEqual(g_Weapon[i].data_entity, "weapon_hkp2000", false))
             {
                 GivePlayerItem2(client, g_Weapon[i].data_entity);
@@ -1415,12 +1448,12 @@ void BuySavedLoadout(int client, bool spawn)
                 {
                     if(!StrEqual(weaponentity, g_Weapon[x].data_entity))
                     {
-                        PurchaseWeapon(client, g_Weapon[x].data_entity, true);
+                        PurchaseWeapon(client, g_Weapon[x].data_entity, true, true);
                     }
                 }
                 else
                 {
-                    PurchaseWeapon(client, g_Weapon[x].data_entity, true);
+                    PurchaseWeapon(client, g_Weapon[x].data_entity, true, true);
                 }
             }
         }
@@ -1886,6 +1919,108 @@ public int SelectRestrictMenuHandler(Menu menu, MenuAction action, int param1, i
         }
     }
     return 0;
+}
+
+//Bypass
+public Action Command_ByPassCount(int client, int args)
+{
+    if(args < 2)
+    {
+        ReplyToCommand(client, " \x04%s\x01 Usage: sm_bypasscount <clientname> <weaponname|weapontype>", sTag);
+        return Plugin_Handled;
+    }
+
+    char sArg1[64];
+    char sArg2[64];
+
+    GetCmdArg(1, sArg1, sizeof(sArg1));
+    GetCmdArg(2, sArg2, sizeof(sArg2));
+
+    int target = FindTarget(client, sArg1, true, true);
+
+    if(!IsClientInGame(target))
+    {
+        ReplyToCommand(client, " \x04%s\x01 Invalid Target", sTag);
+        return Plugin_Handled;
+    }
+
+    if(!IsWeaponTypeValid(sArg2) || FindWeaponIndexByName(sArg2) == -1)
+    {
+        ReplyToCommand(client, " \x04%s\x01 Invalid Weapon", sTag);
+        return Plugin_Handled;
+    }
+
+    ProceedByPass(target, sArg2, BYPASS_COUNT, true);
+    return Plugin_Handled;
+}
+
+void ProceedByPass(int client, const char[] weapon, int type, bool allowthem)
+{
+    int weaponindex = FindWeaponIndexByName(weapon);
+    if(type == BYPASS_COUNT)
+    {
+        SetClientByPassCount(client, weaponindex, allowthem);
+    }
+}
+
+void SetClientByPassCount(int client, int weaponindex, bool bstatus)
+{
+    g_iClientBypassCount[client][weaponindex] = bstatus;
+}
+
+void SetClientByPassPrice(int client, int weaponindex, bool bstatus)
+{
+    g_iClientBypassPrice[client][weaponindex] = bstatus;
+}
+
+void SetClientByPassRestrict(int client, int weaponindex, bool bstatus)
+{
+    g_iClientBypassRestrict[client][weaponindex] = bstatus;
+}
+
+stock int FindWeaponIndexByName(const char[] weaponname)
+{
+    for(int i = 0; i < g_iTotal; i++)
+    {
+        if(StrEqual(weaponname, g_Weapon[i].data_name, false))
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
+stock int FindWeaponIndexByEntityName(const char[] weaponentity)
+{
+    for(int i = 0; i < g_iTotal; i++)
+    {
+        if(StrEqual(weaponentity, g_Weapon[i].data_entity, false))
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
+stock bool IsWeaponTypeValid(const char[] weapontype)
+{
+    for(int i = 0; i < g_iTotal; i++)
+    {
+        if(StrEqual(weapontype, g_Weapon[i].data_type, false))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+stock bool IsWeaponInType(const char[] weapontype, int weaponindex)
+{
+    if(StrEqual(weapontype, g_Weapon[weaponindex].data_type, false))
+    {
+        return true;
+    }
+    return false;
 }
 
 void SetPurchaseCooldown(int client, const char[] weaponname, float time)
