@@ -23,7 +23,7 @@
 #define WEAPON_SLOT_MAX 4
 
 #define BYPASS_COUNT 0
-#define BYBASS_PRICE 1
+#define BYPASS_PRICE 1
 #define BYPASS_RESTRICT 2
 
 enum struct Weapon_Data
@@ -39,7 +39,6 @@ enum struct Weapon_Data
     bool data_restrict;
     int data_maxpurchase;
     float data_cooldown;
-    bool data_freeatspawn;
 }
 
 int g_iTotal;
@@ -83,10 +82,10 @@ GlobalForward g_hOnClientPurchase;
 
 public Plugin myinfo = 
 {
-    name = "[CSGO/CSS] Gun Menu",
+    name = "[CSGO/CSS] Advanced Gun Menu",
     author = "Oylsister",
     description = "Purchase weapon from the menu and create specific command to purchase specific weapon",
-    version = "2.0",
+    version = "2.1",
     url = "https://github.com/oylsister/SM-GunMenu"
 };
 
@@ -104,6 +103,14 @@ public void OnPluginStart()
     RegAdminCmd("sm_unrestrict", Command_Unrestrict, ADMFLAG_GENERIC);
     RegAdminCmd("sm_slot", GetSlotCommand, ADMFLAG_GENERIC);
     RegAdminCmd("sm_reloadweapon", Command_ReloadConfig, ADMFLAG_CONFIG);
+
+    RegAdminCmd("sm_bypasscount", Command_ByPassCount, ADMFLAG_BAN);
+    RegAdminCmd("sm_bypassprice", Command_ByPassPrice, ADMFLAG_BAN);
+    RegAdminCmd("sm_bypassrestrict", Command_ByPassRestrict, ADMFLAG_BAN);
+
+    RegAdminCmd("sm_unbypasscount", Command_UnByPassCount, ADMFLAG_BAN);
+    RegAdminCmd("sm_unbypassprice", Command_UnByPassPrice, ADMFLAG_BAN);
+    RegAdminCmd("sm_unbypassrestrict", Command_UnByPassRestrict, ADMFLAG_BAN);
 
     g_bMenuCommandInitialized = false;
     g_bCommandInitialized = false;
@@ -1954,12 +1961,211 @@ public Action Command_ByPassCount(int client, int args)
     return Plugin_Handled;
 }
 
+public Action Command_ByPassPrice(int client, int args)
+{
+    if(args < 2)
+    {
+        ReplyToCommand(client, " \x04%s\x01 Usage: sm_bypassprice <clientname> <weaponname|weapontype>", sTag);
+        return Plugin_Handled;
+    }
+
+    char sArg1[64];
+    char sArg2[64];
+
+    GetCmdArg(1, sArg1, sizeof(sArg1));
+    GetCmdArg(2, sArg2, sizeof(sArg2));
+
+    int target = FindTarget(client, sArg1, true, true);
+
+    if(!IsClientInGame(target))
+    {
+        ReplyToCommand(client, " \x04%s\x01 Invalid Target", sTag);
+        return Plugin_Handled;
+    }
+
+    if(!IsWeaponTypeValid(sArg2) || FindWeaponIndexByName(sArg2) == -1)
+    {
+        ReplyToCommand(client, " \x04%s\x01 Invalid Weapon", sTag);
+        return Plugin_Handled;
+    }
+
+    ProceedByPass(target, sArg2, BYPASS_PRICE, true);
+    return Plugin_Handled;
+}
+
+public Action Command_ByPassRestrict(int client, int args)
+{
+    if(args < 2)
+    {
+        ReplyToCommand(client, " \x04%s\x01 Usage: sm_bypassrestrict <clientname> <weaponname|weapontype>", sTag);
+        return Plugin_Handled;
+    }
+
+    char sArg1[64];
+    char sArg2[64];
+
+    GetCmdArg(1, sArg1, sizeof(sArg1));
+    GetCmdArg(2, sArg2, sizeof(sArg2));
+
+    int target = FindTarget(client, sArg1, true, true);
+
+    if(!IsClientInGame(target))
+    {
+        ReplyToCommand(client, " \x04%s\x01 Invalid Target", sTag);
+        return Plugin_Handled;
+    }
+
+    if(!IsWeaponTypeValid(sArg2) || FindWeaponIndexByName(sArg2) == -1)
+    {
+        ReplyToCommand(client, " \x04%s\x01 Invalid Weapon", sTag);
+        return Plugin_Handled;
+    }
+
+    ProceedByPass(target, sArg2, BYPASS_RESTRICT, true);
+    return Plugin_Handled;
+}
+
+public Action Command_UnByPassCount(int client, int args)
+{
+    if(args < 2)
+    {
+        ReplyToCommand(client, " \x04%s\x01 Usage: sm_unbypasscount <clientname> <weaponname|weapontype>", sTag);
+        return Plugin_Handled;
+    }
+
+    char sArg1[64];
+    char sArg2[64];
+
+    GetCmdArg(1, sArg1, sizeof(sArg1));
+    GetCmdArg(2, sArg2, sizeof(sArg2));
+
+    int target = FindTarget(client, sArg1, true, true);
+
+    if(!IsClientInGame(target))
+    {
+        ReplyToCommand(client, " \x04%s\x01 Invalid Target", sTag);
+        return Plugin_Handled;
+    }
+
+    if(!IsWeaponTypeValid(sArg2) || FindWeaponIndexByName(sArg2) == -1)
+    {
+        ReplyToCommand(client, " \x04%s\x01 Invalid Weapon", sTag);
+        return Plugin_Handled;
+    }
+
+    ProceedByPass(target, sArg2, BYPASS_COUNT, false);
+    return Plugin_Handled;
+}
+
+public Action Command_UnByPassPrice(int client, int args)
+{
+    if(args < 2)
+    {
+        ReplyToCommand(client, " \x04%s\x01 Usage: sm_unbypasscount <clientname> <weaponname|weapontype>", sTag);
+        return Plugin_Handled;
+    }
+
+    char sArg1[64];
+    char sArg2[64];
+
+    GetCmdArg(1, sArg1, sizeof(sArg1));
+    GetCmdArg(2, sArg2, sizeof(sArg2));
+
+    int target = FindTarget(client, sArg1, true, true);
+
+    if(!IsClientInGame(target))
+    {
+        ReplyToCommand(client, " \x04%s\x01 Invalid Target", sTag);
+        return Plugin_Handled;
+    }
+
+    if(!IsWeaponTypeValid(sArg2) || FindWeaponIndexByName(sArg2) == -1)
+    {
+        ReplyToCommand(client, " \x04%s\x01 Invalid Weapon", sTag);
+        return Plugin_Handled;
+    }
+
+    ProceedByPass(target, sArg2, BYPASS_PRICE, false);
+    return Plugin_Handled;
+}
+
+public Action Command_UnByPassRestrict(int client, int args)
+{
+    if(args < 2)
+    {
+        ReplyToCommand(client, " \x04%s\x01 Usage: sm_unbypassrestrict <clientname> <weaponname|weapontype>", sTag);
+        return Plugin_Handled;
+    }
+
+    char sArg1[64];
+    char sArg2[64];
+
+    GetCmdArg(1, sArg1, sizeof(sArg1));
+    GetCmdArg(2, sArg2, sizeof(sArg2));
+
+    int target = FindTarget(client, sArg1, true, true);
+
+    if(!IsClientInGame(target))
+    {
+        ReplyToCommand(client, " \x04%s\x01 Invalid Target", sTag);
+        return Plugin_Handled;
+    }
+
+    if(!IsWeaponTypeValid(sArg2) || FindWeaponIndexByName(sArg2) == -1)
+    {
+        ReplyToCommand(client, " \x04%s\x01 Invalid Weapon", sTag);
+        return Plugin_Handled;
+    }
+
+    ProceedByPass(target, sArg2, BYPASS_RESTRICT, false);
+    return Plugin_Handled;
+}
+
 void ProceedByPass(int client, const char[] weapon, int type, bool allowthem)
 {
-    int weaponindex = FindWeaponIndexByName(weapon);
-    if(type == BYPASS_COUNT)
+    int weaponindex; 
+    weaponindex = FindWeaponIndexByName(weapon);
+
+    if(weaponindex != -1)
     {
-        SetClientByPassCount(client, weaponindex, allowthem);
+        if(type == BYPASS_COUNT)
+        {
+            SetClientByPassCount(client, weaponindex, allowthem);
+            return;
+        }
+        else if(type == BYPASS_PRICE)
+        {
+            SetClientByPassPrice(client, weaponindex, allowthem);
+            return;
+        }
+        else
+        {
+            SetClientByPassRestrict(client, weaponindex, allowthem);
+            return;
+        }
+    }
+    
+    if(IsWeaponTypeValid(weapon))
+    {
+        for(int i = 0; i < g_iTotal; i++)
+        {
+            if(IsWeaponInType(weapon, i))
+            {
+                if(type == BYPASS_COUNT)
+                {
+                    SetClientByPassCount(client, i, allowthem);
+                }
+                else if(type == BYPASS_PRICE)
+                {
+                    SetClientByPassPrice(client, i, allowthem);
+                }
+                else
+                {
+                    SetClientByPassRestrict(client, i, allowthem);
+                }
+            }
+        }
+        return;
     }
 }
 
