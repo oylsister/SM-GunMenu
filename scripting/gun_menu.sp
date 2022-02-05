@@ -1326,6 +1326,7 @@ public void PurchaseWeapon(int client, const char[] entity, bool loadout, bool s
             Call_PushCell(loadout);
             Call_PushCell(spawn);
 
+            Call_Finish();
             return;
         }
     }
