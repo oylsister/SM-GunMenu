@@ -79,6 +79,7 @@ bool g_iClientBypassRestrict[MAXPLAYERS+1][64];
 
 // Forward
 GlobalForward g_hOnClientPurchase;
+GlobalForward g_hOnClientPurchased;
 
 public Plugin myinfo = 
 {
@@ -158,7 +159,8 @@ public void OnPluginStart()
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
-    g_hOnClientPurchase = CreateGlobalForward("GunMenu_OnClientPurchase", ET_Hook, Param_Cell, Param_String);
+    g_hOnClientPurchase = CreateGlobalForward("GunMenu_OnClientPurchase", ET_Hook, Param_Cell, Param_String, Param_Cell, Param_Cell);
+    g_hOnClientPurchased = CreateGlobalForward("GunMenu_OnClientPurchased", ET_Ignore, Param_Cell, Param_String, Param_Cell, Param_Cell);
 
     MarkNativeAsOptional("ZR_IsClientZombie");
     MarkNativeAsOptional("ZRiot_IsClientZombie");
@@ -1085,7 +1087,7 @@ public int SelectMenuHandler(Menu menu, MenuAction action, int param1, int param
 public void PurchaseWeapon(int client, const char[] entity, bool loadout, bool spawn)
 {
     bool freeonspawn = g_Cvar_FreeOnSpawn.BoolValue;
-    Action result = ForwardOnClientPurchase(client, entity);
+    Action result = ForwardOnClientPurchase(client, entity, loadout, spawn);
 
     if(result == Plugin_Handled)
     {
@@ -1316,6 +1318,13 @@ public void PurchaseWeapon(int client, const char[] entity, bool loadout, bool s
             {
                 SetPurchaseCooldown(client, g_Weapon[i].data_name, thetime + cooldown);
             }
+
+            Call_StartForward(g_hOnClientPurchased);
+
+            Call_PushCell(client);
+            Call_PushString(entity);
+            Call_PushCell(loadout);
+            Call_PushCell(spawn);
 
             return;
         }
@@ -2321,12 +2330,14 @@ public int Native_ByPassRestrict(Handle hPlugin, int numParams)
     SetClientByPassRestrict(client, weaponindex, allowthem);
 }
 
-Action ForwardOnClientPurchase(int client, const char[] weaponentity)
+Action ForwardOnClientPurchase(int client, const char[] weaponentity, bool loadout, bool spawn)
 {
     Call_StartForward(g_hOnClientPurchase);
 
     Call_PushCell(client);
     Call_PushString(weaponentity);
+    Call_PushCell(loadout);
+    Call_PushCell(spawn);
 
     Action result;
     Call_Finish(result);

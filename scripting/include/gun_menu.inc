@@ -54,7 +54,20 @@ native void GunMenu_SetClientByPassRestrict(int client, int weaponindex, bool al
  * @param loadout       Does client purchase via loadout or not
  * @param spawn         Does client purchase on spawn or not
  *
- * public void PurchaseWeapon(int client, const char[] entity)
+ * public void PurchaseWeapon(int client, const char[] entity, bool loadout, bool spawn)
  */
 
 forward Action GunMenu_OnClientPurchase(int client, const char[] weaponentity, bool loadout, bool spawn);
+
+/**
+ * Called when a client purchased weapon through Gun-Menu plugin
+ *
+ * @param client        the client index.
+ * @param weaponentity  The weapoon entity name.
+ * @param loadout       Does client purchase via loadout or not
+ * @param spawn         Does client purchase on spawn or not
+ *
+ * public void PurchaseWeapon(int client, const char[] entity,  bool loadout, bool spawn)
+ */
+
+forward void GunMenu_OnClientPurchased(int client, const char[] weaponentity, bool loadout, bool spawn);
