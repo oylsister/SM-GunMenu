@@ -85,7 +85,7 @@ public Plugin myinfo =
     name = "[CSGO/CSS] Advanced Gun Menu",
     author = "Oylsister",
     description = "Purchase weapon from the menu and create specific command to purchase specific weapon",
-    version = "2.1",
+    version = "2.3",
     url = "https://github.com/oylsister/SM-GunMenu"
 };
 
@@ -163,6 +163,11 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
     MarkNativeAsOptional("ZR_IsClientZombie");
     MarkNativeAsOptional("ZRiot_IsClientZombie");
     MarkNativeAsOptional("SMRPG_Armor_GetClientMaxArmor");
+
+    CreateNative("GunMenu_GetWeaponIdByEntityName", Native_GetWeaponIdByEntityName);
+    CreateNative("GunMenu_SetClientByPassCount", Native_ByPassCount);
+    CreateNative("GunMenu_SetClientByPassPrice", Native_ByPassPrice);
+    CreateNative("GunMenu_SetClientByPassRestrict", Native_ByPassRestrict);
 }
 
 public void OnClientPutInServer(int client)
@@ -1119,7 +1124,7 @@ public void PurchaseWeapon(int client, const char[] entity, bool loadout, bool s
     {
         if(StrEqual(entity, g_Weapon[i].data_entity, false))
         {
-            if(g_Weapon[i].data_restrict == true)
+            if(g_Weapon[i].data_restrict == true && !g_iClientBypassRestrict[client][i])
             {
                 PrintToChat(client, " \x04%s\x01 Weapon \x06\"%s\" \x01has been restricted.", sTag, g_Weapon[i].data_name);
                 return;
@@ -1139,7 +1144,7 @@ public void PurchaseWeapon(int client, const char[] entity, bool loadout, bool s
             int purchasecount = GetPurchaseCount(client, g_Weapon[i].data_name);
             int purchaseleft = purchasemax - purchasecount;
 
-            if(purchasemax > 0 && purchaseleft <= 0)
+            if(purchasemax > 0 && purchaseleft <= 0 && !g_iClientBypassCount[client][i])
             {
                 PrintToChat(client, " \x04%s\x01 You have reached maximum purchase for \x04\"%s\"\x01. You can purchase it again on next round.", sTag, g_Weapon[i].data_name);
                 return;
@@ -1169,7 +1174,7 @@ public void PurchaseWeapon(int client, const char[] entity, bool loadout, bool s
                 totalprice = originalprice;
             }
 
-            if(totalprice > cash && !spawn && !freeonspawn)
+            if(totalprice > cash && !spawn && !freeonspawn && !g_iClientBypassPrice[client][i])
             {
                 PrintToChat(client, " \x04%s\x01 You don't have enough cash to purchase this item.", sTag);
                 return;
@@ -1229,7 +1234,7 @@ public void PurchaseWeapon(int client, const char[] entity, bool loadout, bool s
 
                 SetEntProp(client, Prop_Send, "m_bHasHelmet", 1);
 
-                if(!spawn && !freeonspawn)
+                if(!spawn && !freeonspawn && !g_iClientBypassPrice[client][i])
                     SetEntProp(client, Prop_Send, "m_iAccount", cash - totalprice);
 
                 SetPurchaseCount(client, g_Weapon[i].data_name, 1, true);
@@ -1293,7 +1298,7 @@ public void PurchaseWeapon(int client, const char[] entity, bool loadout, bool s
                 }
             }
 
-            if(!spawn && !freeonspawn)
+            if(!spawn && !freeonspawn && !g_iClientBypassPrice[client][i])
                 SetEntProp(client, Prop_Send, "m_iAccount", cash - totalprice);
 
             if(StrEqual(g_Weapon[i].data_entity, "weapon_hkp2000", false))
@@ -2273,6 +2278,47 @@ int GetWeaponPurchaseMax(const char[] weaponname)
         }
     }
     return maxpurchase;
+}
+
+public int Native_GetWeaponIdByEntityName(Handle hPlugin, int numParams)
+{
+    int len;
+    GetNativeStringLength(1, len);
+
+    if(len <= 0)
+        return -1;
+    
+    char[] str = new char[len+1];
+    GetNativeString(1, str, len + 1);
+
+    return FindWeaponIndexByEntityName(str);
+}
+
+public int Native_ByPassCount(Handle hPlugin, int numParams)
+{
+    int client = GetNativeCell(1);
+    int weaponindex = GetNativeCell(2);
+    bool allowthem = view_as<bool>(GetNativeCell(3));
+
+    SetClientByPassCount(client, weaponindex, allowthem);
+}
+
+public int Native_ByPassPrice(Handle hPlugin, int numParams)
+{
+    int client = GetNativeCell(1);
+    int weaponindex = GetNativeCell(2);
+    bool allowthem = view_as<bool>(GetNativeCell(3));
+
+    SetClientByPassPrice(client, weaponindex, allowthem);
+}
+
+public int Native_ByPassRestrict(Handle hPlugin, int numParams)
+{
+    int client = GetNativeCell(1);
+    int weaponindex = GetNativeCell(2);
+    bool allowthem = view_as<bool>(GetNativeCell(3));
+
+    SetClientByPassRestrict(client, weaponindex, allowthem);
 }
 
 Action ForwardOnClientPurchase(int client, const char[] weaponentity)
