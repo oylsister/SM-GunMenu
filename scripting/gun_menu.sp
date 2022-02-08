@@ -51,6 +51,7 @@ bool g_bAllowLoadout = true;
 bool g_bCommandInitialized = false;
 bool g_bMenuCommandInitialized = false;
 bool g_bSaveOnMenuCommand;
+bool g_bFreeOnSpawn;
 
 char sTag[64];
 
@@ -61,6 +62,14 @@ ConVar g_Cvar_HookOnBuyZone;
 ConVar g_Cvar_ConfigPath;
 ConVar g_Cvar_SaveOnMenuCommand;
 ConVar g_Cvar_FreeOnSpawn;
+
+ConVar g_Cvar_Pref_Primary;
+ConVar g_Cvar_Pref_Secondary;
+ConVar g_Cvar_Pref_Grenade;
+
+char g_sPref_Primary[64];
+char g_sPref_Secondary[64];
+char g_sPref_Grenade[64];
 
 char g_sConfigPath[PLATFORM_MAX_PATH];
 
@@ -100,6 +109,11 @@ public void OnPluginStart()
     g_Cvar_SaveOnMenuCommand = CreateConVar("sm_gunmenu_saveloadout_onmenu", "1.0", "Save weapon loadout when player do !zbuy <weaponname>", _, true, 0.0, true, 1.0);
     g_Cvar_FreeOnSpawn = CreateConVar("sm_gunmenu_freeonspawn", "1.0", "Allow player to get their weapon on spawn for free", _, true, 0.0, true, 1.0);
 
+    // Default weapon for client preference.
+    g_Cvar_Pref_Primary = CreateConVar("sm_gunmenu_pref_primary", "Bizon", "Default primary weapon");
+    g_Cvar_Pref_Secondary = CreateConVar("sm_gunmenu_pref_secondary", "Elite", "Default secondary weapon");
+    g_Cvar_Pref_Grenade = CreateConVar("sm_gunmenu_pref_grenade", "HeGrenade", "Default grenade");
+
     RegAdminCmd("sm_restrict", Command_Restrict, ADMFLAG_GENERIC);
     RegAdminCmd("sm_unrestrict", Command_Unrestrict, ADMFLAG_GENERIC);
     RegAdminCmd("sm_slot", GetSlotCommand, ADMFLAG_GENERIC);
@@ -124,6 +138,10 @@ public void OnPluginStart()
     HookConVarChange(g_Cvar_HookOnBuyZone, OnHookBuyZoneChanged);
     HookConVarChange(g_Cvar_ConfigPath, OnConfigPathChanged);
     HookConVarChange(g_Cvar_SaveOnMenuCommand, OnSaveOnMenuCommandChanged);
+    HookConVarChange(g_Cvar_FreeOnSpawn, OnFreeOnSpawnChanged);
+    HookConVarChange(g_Cvar_Pref_Primary, OnPrefWeaponChanged);
+    HookConVarChange(g_Cvar_Pref_Secondary, OnPrefWeaponChanged);
+    HookConVarChange(g_Cvar_Pref_Grenade, OnPrefWeaponChanged);
 
     if(g_hRebuyCookies == INVALID_HANDLE)
     {
@@ -150,8 +168,6 @@ public void OnPluginStart()
         {
             OnClientCookiesCached(i);
         }
-
-        OnClientPutInServer(i);
     }
 
     AutoExecConfig();
@@ -252,6 +268,18 @@ public void OnSaveOnMenuCommandChanged(ConVar cvar, const char[] oldValue, const
     g_bSaveOnMenuCommand = GetConVarBool(g_Cvar_SaveOnMenuCommand);
 }
 
+public void OnFreeOnSpawnChanged(ConVar cvar, const char[] oldValue, const char[] newValue)
+{
+    g_bFreeOnSpawn = GetConVarBool(g_Cvar_FreeOnSpawn);
+}
+
+public void OnPrefWeaponChanged(ConVar cvar, const char[] oldValue, const char[] newValue)
+{
+    GetConVarString(g_Cvar_Pref_Primary, g_sPref_Primary, sizeof(g_sPref_Primary));
+    GetConVarString(g_Cvar_Pref_Secondary, g_sPref_Secondary, sizeof(g_sPref_Secondary));
+    GetConVarString(g_Cvar_Pref_Grenade, g_sPref_Grenade, sizeof(g_sPref_Grenade));
+}
+
 public Action OnWeaponCanUse(int client, int weapon)
 {
     char weaponentity[64];
@@ -292,7 +320,18 @@ public void OnClientCookiesCached(int client)
 
         if(sBuffer2[0] == '\0')
         {
-            Format(sBuffer2, sizeof(sBuffer2), "");
+            if(i == SLOT_PRIMARY)
+                GetConVarString(g_Cvar_Pref_Primary, sBuffer2, sizeof(sBuffer2));
+
+            else if(i == SLOT_SECONDARY)
+                GetConVarString(g_Cvar_Pref_Secondary, sBuffer2, sizeof(sBuffer2));
+
+            else if(i == SLOT_GRENADE)
+                GetConVarString(g_Cvar_Pref_Grenade, sBuffer2, sizeof(sBuffer2));
+
+            if(strlen(sBuffer2) <= 0)
+                Format(sBuffer2, sizeof(sBuffer2), "");
+                
             SaveLoadoutCookie(client, i, sBuffer2);
         }
     }
@@ -322,6 +361,11 @@ public void OnConfigsExecuted()
     GetConVarString(g_Cvar_PluginTag, sTag, sizeof(sTag));
     g_bBuyZoneOnly = GetConVarBool(g_Cvar_BuyZoneOnly);
     GetConVarString(g_Cvar_ConfigPath, g_sConfigPath, sizeof(g_sConfigPath));
+    g_bFreeOnSpawn = GetConVarBool(g_Cvar_FreeOnSpawn);
+
+    GetConVarString(g_Cvar_Pref_Primary, g_sPref_Primary, sizeof(g_sPref_Primary));
+    GetConVarString(g_Cvar_Pref_Secondary, g_sPref_Secondary, sizeof(g_sPref_Secondary));
+    GetConVarString(g_Cvar_Pref_Grenade, g_sPref_Grenade, sizeof(g_sPref_Grenade));
 
     LoadConfig();
     CreateMenuCommand();
@@ -1084,10 +1128,9 @@ public int SelectMenuHandler(Menu menu, MenuAction action, int param1, int param
     return 0;
 }
 
-public void PurchaseWeapon(int client, const char[] entity, bool loadout, bool spawn)
+void PurchaseWeapon(int client, const char[] entity, bool loadout, bool free = false)
 {
-    bool freeonspawn = g_Cvar_FreeOnSpawn.BoolValue;
-    Action result = ForwardOnClientPurchase(client, entity, loadout, spawn);
+    Action result = ForwardOnClientPurchase(client, entity, loadout, free);
 
     if(result == Plugin_Handled)
     {
@@ -1176,7 +1219,7 @@ public void PurchaseWeapon(int client, const char[] entity, bool loadout, bool s
                 totalprice = originalprice;
             }
 
-            if(totalprice > cash && !spawn && !freeonspawn && !g_iClientBypassPrice[client][i])
+            if(totalprice > cash && !g_iClientBypassPrice[client][i])
             {
                 PrintToChat(client, " \x04%s\x01 You don't have enough cash to purchase this item.", sTag);
                 return;
@@ -1236,7 +1279,7 @@ public void PurchaseWeapon(int client, const char[] entity, bool loadout, bool s
 
                 SetEntProp(client, Prop_Send, "m_bHasHelmet", 1);
 
-                if(!spawn && !freeonspawn && !g_iClientBypassPrice[client][i])
+                if(free == false && g_iClientBypassPrice[client][i] == false)
                     SetEntProp(client, Prop_Send, "m_iAccount", cash - totalprice);
 
                 SetPurchaseCount(client, g_Weapon[i].data_name, 1, true);
@@ -1300,7 +1343,7 @@ public void PurchaseWeapon(int client, const char[] entity, bool loadout, bool s
                 }
             }
 
-            if(!spawn && !freeonspawn && !g_iClientBypassPrice[client][i])
+            if(free == false && g_iClientBypassPrice[client][i] == false)
                 SetEntProp(client, Prop_Send, "m_iAccount", cash - totalprice);
 
             if(StrEqual(g_Weapon[i].data_entity, "weapon_hkp2000", false))
@@ -1324,7 +1367,7 @@ public void PurchaseWeapon(int client, const char[] entity, bool loadout, bool s
             Call_PushCell(client);
             Call_PushString(entity);
             Call_PushCell(loadout);
-            Call_PushCell(spawn);
+            Call_PushCell(free);
 
             Call_Finish();
             return;
@@ -1470,12 +1513,12 @@ void BuySavedLoadout(int client, bool spawn)
                 {
                     if(!StrEqual(weaponentity, g_Weapon[x].data_entity))
                     {
-                        PurchaseWeapon(client, g_Weapon[x].data_entity, true, true);
+                        PurchaseWeapon(client, g_Weapon[x].data_entity, true, g_bFreeOnSpawn);
                     }
                 }
                 else
                 {
-                    PurchaseWeapon(client, g_Weapon[x].data_entity, true, true);
+                    PurchaseWeapon(client, g_Weapon[x].data_entity, true, g_bFreeOnSpawn);
                 }
             }
         }
