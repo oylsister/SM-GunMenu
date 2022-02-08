@@ -1,6 +1,8 @@
 # [CS:GO/CS:S] SM-GunMenu
 Purchase weapon through command and menu with customizable config for gun command.
 
+## Check out branch 'dev' for experimental updates.
+
 ## Feature
 - Restrict Option Including Weapon Type (NEW)
 - Allowing Player to save their own loadout.
