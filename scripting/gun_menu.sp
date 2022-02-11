@@ -168,6 +168,12 @@ public void OnPluginStart()
         {
             OnClientCookiesCached(i);
         }
+
+        if(IsClientInGame(i))
+        {
+            SDKHook(i, SDKHook_WeaponCanUse, OnWeaponCanUse);
+            ResetTries(i);
+        }
     }
 
     AutoExecConfig();
@@ -191,7 +197,11 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 public void OnClientPutInServer(int client)
 {
     SDKHook(client, SDKHook_WeaponCanUse, OnWeaponCanUse);
+    ResetTries(client);
+}
 
+void ResetTries(int client)
+{
     if(g_hPurchaseCount[client] != INVALID_HANDLE)
     {
         CloseHandle(g_hPurchaseCount[client]);
@@ -606,10 +616,6 @@ public Action CS_OnBuyCommand(int client, const char[] weapon)
 public void OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {
     int client = GetClientOfUserId(GetEventInt(event, "userid"));
-    if(g_bAutoRebuy[client])
-    {
-        BuySavedLoadout(client, true);
-    }
 
     if(g_hPurchaseCount[client] != INVALID_HANDLE)
     {
@@ -624,6 +630,11 @@ public void OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
     for(int x = 0; x < g_iTotal; x++)
     {
         SetTrieValue(g_hPurchaseCooldown[client], g_Weapon[x].data_name, 0.0, true);
+    }
+
+    if(g_bAutoRebuy[client])
+    {
+        BuySavedLoadout(client, true);
     }
 }
 
