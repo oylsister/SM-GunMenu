@@ -22,9 +22,15 @@
 
 #define WEAPON_SLOT_MAX 4
 
+// Bypass
 #define BYPASS_COUNT 0
 #define BYPASS_PRICE 1
 #define BYPASS_RESTRICT 2
+#define BYPASS_COOLDOWN 3
+
+// Cooldown Mode
+#define COOLDOWN_GLOBAL 1
+#define COOLDOWN_INDIVIDUAL 2
 
 enum struct Weapon_Data
 {
@@ -52,6 +58,8 @@ bool g_bCommandInitialized = false;
 bool g_bMenuCommandInitialized = false;
 bool g_bSaveOnMenuCommand;
 bool g_bFreeOnSpawn;
+int g_iCooldownMode;
+float g_fGlobalCooldown;
 
 char sTag[64];
 
@@ -62,19 +70,30 @@ ConVar g_Cvar_HookOnBuyZone;
 ConVar g_Cvar_ConfigPath;
 ConVar g_Cvar_SaveOnMenuCommand;
 ConVar g_Cvar_FreeOnSpawn;
+ConVar g_Cvar_CooldownMode;
+ConVar g_Cvar_GlobalCooldown;
 
 ConVar g_Cvar_Pref_Primary;
 ConVar g_Cvar_Pref_Secondary;
 ConVar g_Cvar_Pref_Grenade;
+ConVar g_Cvar_DelayApplying;
 
 char g_sPref_Primary[64];
 char g_sPref_Secondary[64];
 char g_sPref_Grenade[64];
+float g_fDelayApplying;
 
 char g_sConfigPath[PLATFORM_MAX_PATH];
 
-Handle g_hPurchaseCount[MAXPLAYERS+1];
-Handle g_hPurchaseCooldown[MAXPLAYERS+1];
+enum struct Client_TempData
+{
+    int temp_purchasecount;
+    float temp_purchase_cd;
+}
+
+float g_fClientGlobalCd[MAXPLAYERS+1] = {0.0, ...};
+float g_fClientTypeBasedCd[MAXPLAYERS+1][WEAPON_SLOT_MAX];
+Client_TempData g_ClientTemp[MAXPLAYERS+1][64];
 
 // Client Preferences
 Handle g_hWeaponCookies[WEAPON_SLOT_MAX] = INVALID_HANDLE;
@@ -202,20 +221,12 @@ public void OnClientPutInServer(int client)
 
 void ResetTries(int client)
 {
-    if(g_hPurchaseCount[client] != INVALID_HANDLE)
-    {
-        CloseHandle(g_hPurchaseCount[client]);
-    }
-    g_hPurchaseCount[client] = CreateTrie();
-
-    if(g_hPurchaseCooldown[client] != INVALID_HANDLE)
-    {
-        CloseHandle(g_hPurchaseCooldown[client]);
-    }
-    g_hPurchaseCooldown[client] = CreateTrie();
+    g_fClientGlobalCd[client] = 0.0;
 
     for(int i = 0; i < 64; i ++)
     {
+        g_ClientTemp[client][i].temp_purchase_cd = 0.0;
+        g_ClientTemp[client][i].temp_purchasecount = 0;
         g_iClientBypassCount[client][i] = false;
         g_iClientBypassPrice[client][i] = false;
         g_iClientBypassRestrict[client][i] = false;
@@ -225,25 +236,7 @@ void ResetTries(int client)
 public void OnClientDisconnect(int client)
 {
     SDKUnhook(client, SDKHook_WeaponCanUse, OnWeaponCanUse);
-
-    if(g_hPurchaseCount[client] != INVALID_HANDLE)
-    {
-        CloseHandle(g_hPurchaseCount[client]);
-    }
-    g_hPurchaseCount[client] = INVALID_HANDLE;
-
-    if(g_hPurchaseCooldown[client] != INVALID_HANDLE)
-    {
-        CloseHandle(g_hPurchaseCooldown[client]);
-    }
-    g_hPurchaseCooldown[client] = INVALID_HANDLE;
-
-    for(int i = 0; i < 64; i ++)
-    {
-        g_iClientBypassCount[client][i] = false;
-        g_iClientBypassPrice[client][i] = false;
-        g_iClientBypassRestrict[client][i] = false;
-    }
+    ResetTries(client);
 }
 
 public void OnBuyZoneChanged(ConVar cvar, const char[] oldValue, const char[] newValue)
@@ -617,20 +610,7 @@ public void OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {
     int client = GetClientOfUserId(GetEventInt(event, "userid"));
 
-    if(g_hPurchaseCount[client] != INVALID_HANDLE)
-    {
-        ClearTrie(g_hPurchaseCount[client]);
-    }
-
-    if(g_hPurchaseCooldown[client] != INVALID_HANDLE)
-    {
-        ClearTrie(g_hPurchaseCooldown[client]);
-    }
-
-    for(int x = 0; x < g_iTotal; x++)
-    {
-        SetTrieValue(g_hPurchaseCooldown[client], g_Weapon[x].data_name, 0.0, true);
-    }
+    ResetTries(client);
 
     if(g_bAutoRebuy[client])
     {
@@ -2300,34 +2280,48 @@ stock bool IsWeaponInType(const char[] weapontype, int weaponindex)
 
 void SetPurchaseCooldown(int client, const char[] weaponname, float time)
 {
-    SetTrieValue(g_hPurchaseCooldown[client], weaponname, time);
+    if(g_iCooldownMode == COOLDOWN_GLOBAL)
+        g_fClientGlobalCd[client] = time;
+
+    else
+    {
+        int weaponindex = FindWeaponIndexByName(weaponname);
+
+        if(weaponindex != -1)
+            g_ClientTemp[client][weaponindex].temp_purchase_cd = time;
+    }
 }
 
 float GetPurchaseCooldown(int client, const char[] weaponname)
 {
-    float time;
-    GetTrieValue(g_hPurchaseCooldown[client], weaponname, time);
+    if(g_iCooldownMode == COOLDOWN_GLOBAL)
+        return g_fClientGlobalCd[client];
 
-    return time;
+    else
+    {
+        int weaponindex = FindWeaponIndexByName(weaponname);
+
+        if(weaponindex != -1)
+            return g_ClientTemp[client][weaponindex].temp_purchase_cd;
+    }
 }
 
 void SetPurchaseCount(int client, const char[] weaponname, int value, bool add = false)
 {
-    int purchasemax;
-    
-    if(add)
-    {
-        purchasemax = GetPurchaseCount(client, weaponname);
-    }
-    SetTrieValue(g_hPurchaseCount[client], weaponname, purchasemax + value);
+    int weaponindex = FindWeaponIndexByName(weaponname);
+
+    if(add && weaponindex != -1)
+        g_ClientTemp[client][weaponindex].temp_purchasecount += value;
 }
 
 int GetPurchaseCount(int client, const char[] weaponname)
 {
-    int value;
-    GetTrieValue(g_hPurchaseCount[client], weaponname, value);
+    int weaponindex = FindWeaponIndexByName(weaponname);
 
-    return value;
+    if(weaponindex != -1)
+        return g_ClientTemp[client][weaponindex].temp_purchasecount;
+
+    return 0;
 }
 
 int GetWeaponPurchaseMax(const char[] weaponname)
