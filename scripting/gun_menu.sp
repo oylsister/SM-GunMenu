@@ -73,13 +73,14 @@ char g_sPref_Grenade[64];
 
 char g_sConfigPath[PLATFORM_MAX_PATH];
 
-Handle g_hPurchaseCount[MAXPLAYERS+1];
-Handle g_hPurchaseCooldown[MAXPLAYERS+1];
+int g_iPurchaseCount[MAXPLAYERS+1][64];
+float g_fPurchaseCooldown[MAXPLAYERS+1][64];
 
 // Client Preferences
 Handle g_hWeaponCookies[WEAPON_SLOT_MAX] = INVALID_HANDLE;
 Handle g_hRebuyCookies = INVALID_HANDLE;
 
+int g_iClientSelectedWeapon[MAXPLAYERS+1][WEAPON_SLOT_MAX];
 bool g_bAutoRebuy[MAXPLAYERS+1];
 
 bool g_iClientBypassPrice[MAXPLAYERS+1][64];
@@ -95,7 +96,7 @@ public Plugin myinfo =
     name = "[CSGO/CSS] Advanced Gun Menu",
     author = "Oylsister",
     description = "Purchase weapon from the menu and create specific command to purchase specific weapon",
-    version = "2.3",
+    version = "2.4",
     url = "https://github.com/oylsister/SM-GunMenu"
 };
 
@@ -168,6 +169,12 @@ public void OnPluginStart()
         {
             OnClientCookiesCached(i);
         }
+
+        for(int x = 0; x < 64; x++)
+        {
+            g_iPurchaseCount[i][x] = 0;
+            g_fPurchaseCooldown[i][x] = 0.0;
+        }
     }
 
     AutoExecConfig();
@@ -192,18 +199,6 @@ public void OnClientPutInServer(int client)
 {
     SDKHook(client, SDKHook_WeaponCanUse, OnWeaponCanUse);
 
-    if(g_hPurchaseCount[client] != INVALID_HANDLE)
-    {
-        CloseHandle(g_hPurchaseCount[client]);
-    }
-    g_hPurchaseCount[client] = CreateTrie();
-
-    if(g_hPurchaseCooldown[client] != INVALID_HANDLE)
-    {
-        CloseHandle(g_hPurchaseCooldown[client]);
-    }
-    g_hPurchaseCooldown[client] = CreateTrie();
-
     for(int i = 0; i < 64; i ++)
     {
         g_iClientBypassCount[client][i] = false;
@@ -216,20 +211,10 @@ public void OnClientDisconnect(int client)
 {
     SDKUnhook(client, SDKHook_WeaponCanUse, OnWeaponCanUse);
 
-    if(g_hPurchaseCount[client] != INVALID_HANDLE)
+    for(int i = 0; i < g_iTotal; i++)
     {
-        CloseHandle(g_hPurchaseCount[client]);
-    }
-    g_hPurchaseCount[client] = INVALID_HANDLE;
-
-    if(g_hPurchaseCooldown[client] != INVALID_HANDLE)
-    {
-        CloseHandle(g_hPurchaseCooldown[client]);
-    }
-    g_hPurchaseCooldown[client] = INVALID_HANDLE;
-
-    for(int i = 0; i < 64; i ++)
-    {
+        g_iPurchaseCount[client][i] = 0;
+        g_fPurchaseCooldown[client][i] = 0.0;
         g_iClientBypassCount[client][i] = false;
         g_iClientBypassPrice[client][i] = false;
         g_iClientBypassRestrict[client][i] = false;
@@ -329,10 +314,15 @@ public void OnClientCookiesCached(int client)
             else if(i == SLOT_GRENADE)
                 GetConVarString(g_Cvar_Pref_Grenade, sBuffer2, sizeof(sBuffer2));
 
+            g_iClientSelectedWeapon[client][i] = FindWeaponIndexByName(sBuffer2);
+
             if(strlen(sBuffer2) <= 0)
+            {
                 Format(sBuffer2, sizeof(sBuffer2), "");
-                
-            SaveLoadoutCookie(client, i, sBuffer2);
+                g_iClientSelectedWeapon[client][i] = -1;
+            }
+
+            SaveLoadoutCookie(client, i, g_iClientSelectedWeapon[client][i]);
         }
     }
 }
@@ -344,16 +334,13 @@ void SaveRebuyCookie(int client)
     SetClientCookie(client, g_hRebuyCookies, sCookie);
 }
 
-void SaveLoadoutCookie(int client, int weaponslot, const char[] weaponname)
+void SaveLoadoutCookie(int client, int weaponslot, int weaponindex)
 {
-    for(int i = 0; i < WEAPON_SLOT_MAX; i++)
-    {
-        if(weaponslot == i)
-        {
-            SetClientCookie(client, g_hWeaponCookies[i], weaponname);
-            return;
-        }
-    }
+    g_iClientSelectedWeapon[client][weaponslot] = weaponindex;
+    
+    char sCookie[32];
+    FormatEx(sCookie, sizeof(sCookie), "%i", weaponindex);
+    SetClientCookie(client, g_hWeaponCookies[weaponslot], sCookie);
 }
 
 public void OnConfigsExecuted()
@@ -606,24 +593,16 @@ public Action CS_OnBuyCommand(int client, const char[] weapon)
 public void OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {
     int client = GetClientOfUserId(GetEventInt(event, "userid"));
+
+    for(int i = 0; i < g_iTotal; i++)
+    {
+        g_iPurchaseCount[client][i] = 0;
+        g_fPurchaseCooldown[client][i] = 0.0;
+    }
+
     if(g_bAutoRebuy[client])
     {
         BuySavedLoadout(client, true);
-    }
-
-    if(g_hPurchaseCount[client] != INVALID_HANDLE)
-    {
-        ClearTrie(g_hPurchaseCount[client]);
-    }
-
-    if(g_hPurchaseCooldown[client] != INVALID_HANDLE)
-    {
-        ClearTrie(g_hPurchaseCooldown[client]);
-    }
-
-    for(int x = 0; x < g_iTotal; x++)
-    {
-        SetTrieValue(g_hPurchaseCooldown[client], g_Weapon[x].data_name, 0.0, true);
     }
 }
 
@@ -829,7 +808,7 @@ public Action Command_GunMenu(int client, int args)
                     if(g_bSaveOnMenuCommand)
                     {
                         slot = g_Weapon[i].data_slot;
-                        SaveLoadoutCookie(client, slot, g_Weapon[i].data_name);
+                        SaveLoadoutCookie(client, slot, i);
                     }
                     return Plugin_Stop;
                 }
@@ -844,7 +823,7 @@ public Action Command_GunMenu(int client, int args)
                         if(g_bSaveOnMenuCommand)
                         {
                             slot = g_Weapon[i].data_slot;
-                            SaveLoadoutCookie(client, slot, g_Weapon[i].data_name);
+                            SaveLoadoutCookie(client, slot, i);
                         }
                         return Plugin_Stop;
                     }
@@ -860,7 +839,7 @@ public Action Command_GunMenu(int client, int args)
                 if(g_bSaveOnMenuCommand)
                 {
                     slot = g_Weapon[i].data_slot;
-                    SaveLoadoutCookie(client, slot, g_Weapon[i].data_name);
+                    SaveLoadoutCookie(client, slot, i);
                 }
                 return Plugin_Stop;
             }
@@ -876,7 +855,7 @@ public Action Command_GunMenu(int client, int args)
             if(g_bSaveOnMenuCommand)
             {
                 slot = g_Weapon[i].data_slot;
-                SaveLoadoutCookie(client, slot, g_Weapon[i].data_name);
+                SaveLoadoutCookie(client, slot, i);
             }
             return Plugin_Stop;
         }
@@ -888,7 +867,7 @@ public Action Command_GunMenu(int client, int args)
             if(g_bSaveOnMenuCommand)
             {
                 slot = g_Weapon[i].data_slot;
-                SaveLoadoutCookie(client, slot, g_Weapon[i].data_name);
+                SaveLoadoutCookie(client, slot, i);
             }
             return Plugin_Stop;
         }
@@ -1476,9 +1455,7 @@ void SaveCurrentLoadout(int client, int slot)
     {
         if(StrEqual(weaponentity, g_Weapon[i].data_entity, false))
         {
-            char weaponname[64];
-            Format(weaponname, sizeof(weaponname), "%s", g_Weapon[i].data_name);
-            SaveLoadoutCookie(client, i, weaponname);
+            SaveLoadoutCookie(client, slot, i);
             return;
         }
     }
@@ -1497,30 +1474,21 @@ void BuySavedLoadout(int client, bool spawn)
             //PrintToChat(client, " \x04[Debug]\x01 Found %s", weaponentity);
         }
 
-        char weaponname[64];
-        GetClientCookie(client, g_hWeaponCookies[i], weaponname, sizeof(weaponname));
-
-        if(weaponname[0] == '\0')
+        if(g_iClientSelectedWeapon[client][i] == -1)
         {
             continue;
         }
 
-        for(int x = 0; x < g_iTotal; x++)
+        if(spawn)
         {
-            if(StrEqual(weaponname, g_Weapon[x].data_name, false))
+            if(!StrEqual(weaponentity, g_Weapon[g_iClientSelectedWeapon[client][i]].data_entity))
             {
-                if(spawn)
-                {
-                    if(!StrEqual(weaponentity, g_Weapon[x].data_entity))
-                    {
-                        PurchaseWeapon(client, g_Weapon[x].data_entity, true, g_bFreeOnSpawn);
-                    }
-                }
-                else
-                {
-                    PurchaseWeapon(client, g_Weapon[x].data_entity, true, g_bFreeOnSpawn);
-                }
+                PurchaseWeapon(client, g_Weapon[g_iClientSelectedWeapon[client][i]].data_entity, true, g_bFreeOnSpawn);
             }
+        }
+        else
+        {
+            PurchaseWeapon(client, g_Weapon[g_iClientSelectedWeapon[client][i]].data_entity, true, g_bFreeOnSpawn);
         }
     }
 }
@@ -1718,12 +1686,12 @@ public int ChooseLoadoutHandler(Menu menu, MenuAction action, int param1, int pa
 
             if(StrEqual(info, "none", false))
             {
-                SaveLoadoutCookie(param1, currentslot, "");
+                SaveLoadoutCookie(param1, currentslot, -1);
                 EditLoadout(param1);
             }
             else
             {
-                SaveLoadoutCookie(param1, currentslot, info);
+                SaveLoadoutCookie(param1, currentslot, FindWeaponIndexByName(info));
                 EditLoadout(param1);
             }
         }
@@ -2289,34 +2257,23 @@ stock bool IsWeaponInType(const char[] weapontype, int weaponindex)
 
 void SetPurchaseCooldown(int client, const char[] weaponname, float time)
 {
-    SetTrieValue(g_hPurchaseCooldown[client], weaponname, time);
+    g_fPurchaseCooldown[client][FindWeaponIndexByName(weaponname)] = time;
 }
 
 float GetPurchaseCooldown(int client, const char[] weaponname)
 {
-    float time;
-    GetTrieValue(g_hPurchaseCooldown[client], weaponname, time);
-
-    return time;
+    return g_fPurchaseCooldown[client][FindWeaponIndexByName(weaponname)];
 }
 
 void SetPurchaseCount(int client, const char[] weaponname, int value, bool add = false)
 {
-    int purchasemax;
-    
     if(add)
-    {
-        purchasemax = GetPurchaseCount(client, weaponname);
-    }
-    SetTrieValue(g_hPurchaseCount[client], weaponname, purchasemax + value);
+        g_iPurchaseCount[client][FindWeaponIndexByName(weaponname)] += value;
 }
 
 int GetPurchaseCount(int client, const char[] weaponname)
 {
-    int value;
-    GetTrieValue(g_hPurchaseCount[client], weaponname, value);
-
-    return value;
+    return g_iPurchaseCount[client][FindWeaponIndexByName(weaponname)];
 }
 
 int GetWeaponPurchaseMax(const char[] weaponname)
