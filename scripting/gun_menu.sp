@@ -22,9 +22,15 @@
 
 #define WEAPON_SLOT_MAX 4
 
+// Bypass
 #define BYPASS_COUNT 0
 #define BYPASS_PRICE 1
 #define BYPASS_RESTRICT 2
+#define BYPASS_COOLDOWN 3
+
+// Cooldown Mode
+#define COOLDOWN_GLOBAL 1
+#define COOLDOWN_INDIVIDUAL 2
 
 enum struct Weapon_Data
 {
@@ -52,6 +58,8 @@ bool g_bCommandInitialized = false;
 bool g_bMenuCommandInitialized = false;
 bool g_bSaveOnMenuCommand;
 bool g_bFreeOnSpawn;
+int g_iCooldownMode;
+float g_fGlobalCooldown;
 
 char sTag[64];
 
@@ -62,14 +70,18 @@ ConVar g_Cvar_HookOnBuyZone;
 ConVar g_Cvar_ConfigPath;
 ConVar g_Cvar_SaveOnMenuCommand;
 ConVar g_Cvar_FreeOnSpawn;
+ConVar g_Cvar_CooldownMode;
+ConVar g_Cvar_GlobalCooldown;
 
 ConVar g_Cvar_Pref_Primary;
 ConVar g_Cvar_Pref_Secondary;
 ConVar g_Cvar_Pref_Grenade;
+ConVar g_Cvar_DelayApplying;
 
 char g_sPref_Primary[64];
 char g_sPref_Secondary[64];
 char g_sPref_Grenade[64];
+float g_fDelayApplying;
 
 char g_sConfigPath[PLATFORM_MAX_PATH];
 
@@ -109,11 +121,14 @@ public void OnPluginStart()
     g_Cvar_ConfigPath = CreateConVar("sm_gunmenu_configpath", "configs/gun_menu.txt", "Specify the path of config file for gun menu");
     g_Cvar_SaveOnMenuCommand = CreateConVar("sm_gunmenu_saveloadout_onmenu", "1.0", "Save weapon loadout when player do !zbuy <weaponname>", _, true, 0.0, true, 1.0);
     g_Cvar_FreeOnSpawn = CreateConVar("sm_gunmenu_freeonspawn", "1.0", "Allow player to get their weapon on spawn for free", _, true, 0.0, true, 1.0);
+    g_Cvar_CooldownMode = CreateConVar("sm_gunmenu_cooldownmode", "1.0", "Specify purchase cooldown mode [1 = Global Cooldown (Cooldown on any weapon purchase) | 2 = Individual Cooldown (Cooldown only on the weapon that get purchased)]", _, true, 1.0, true, 2.0);
+    g_Cvar_GlobalCooldown = CreateConVar("sm_gunmenu_globalcooldown", "5.0", "If you use globalcooldown, specify this purchase cooldown", _, true, 0.0, false);
 
     // Default weapon for client preference.
     g_Cvar_Pref_Primary = CreateConVar("sm_gunmenu_pref_primary", "Bizon", "Default primary weapon");
     g_Cvar_Pref_Secondary = CreateConVar("sm_gunmenu_pref_secondary", "Elite", "Default secondary weapon");
     g_Cvar_Pref_Grenade = CreateConVar("sm_gunmenu_pref_grenade", "HeGrenade", "Default grenade");
+    g_Cvar_DelayApplying = CreateConVar("sm_gunmenu_delayapplying", "1.0", "Specify Delayed timer for purchase loadout on spawn", _, true, 0.0, false);
 
     RegAdminCmd("sm_restrict", Command_Restrict, ADMFLAG_GENERIC);
     RegAdminCmd("sm_unrestrict", Command_Unrestrict, ADMFLAG_GENERIC);
@@ -140,9 +155,13 @@ public void OnPluginStart()
     HookConVarChange(g_Cvar_ConfigPath, OnConfigPathChanged);
     HookConVarChange(g_Cvar_SaveOnMenuCommand, OnSaveOnMenuCommandChanged);
     HookConVarChange(g_Cvar_FreeOnSpawn, OnFreeOnSpawnChanged);
+    HookConVarChange(g_Cvar_CooldownMode, OnCooldownChanged);
+    HookConVarChange(g_Cvar_GlobalCooldown, OnCooldownChanged);
+
     HookConVarChange(g_Cvar_Pref_Primary, OnPrefWeaponChanged);
     HookConVarChange(g_Cvar_Pref_Secondary, OnPrefWeaponChanged);
     HookConVarChange(g_Cvar_Pref_Grenade, OnPrefWeaponChanged);
+    HookConVarChange(g_Cvar_DelayApplying, OnPrefWeaponChanged);
 
     if(g_hRebuyCookies == INVALID_HANDLE)
     {
@@ -263,6 +282,14 @@ public void OnPrefWeaponChanged(ConVar cvar, const char[] oldValue, const char[]
     GetConVarString(g_Cvar_Pref_Primary, g_sPref_Primary, sizeof(g_sPref_Primary));
     GetConVarString(g_Cvar_Pref_Secondary, g_sPref_Secondary, sizeof(g_sPref_Secondary));
     GetConVarString(g_Cvar_Pref_Grenade, g_sPref_Grenade, sizeof(g_sPref_Grenade));
+
+    g_fDelayApplying = GetConVarFloat(g_Cvar_DelayApplying);
+}
+
+public void OnCooldownChanged(ConVar cvar, const char[] oldValue, const char[] newValue)
+{
+    g_iCooldownMode = GetConVarInt(g_Cvar_CooldownMode);
+    g_fGlobalCooldown = GetConVarFloat(g_Cvar_GlobalCooldown);
 }
 
 public Action OnWeaponCanUse(int client, int weapon)
@@ -349,10 +376,14 @@ public void OnConfigsExecuted()
     g_bBuyZoneOnly = GetConVarBool(g_Cvar_BuyZoneOnly);
     GetConVarString(g_Cvar_ConfigPath, g_sConfigPath, sizeof(g_sConfigPath));
     g_bFreeOnSpawn = GetConVarBool(g_Cvar_FreeOnSpawn);
+    g_iCooldownMode = GetConVarInt(g_Cvar_CooldownMode);
+    g_fGlobalCooldown = GetConVarFloat(g_Cvar_GlobalCooldown);
 
     GetConVarString(g_Cvar_Pref_Primary, g_sPref_Primary, sizeof(g_sPref_Primary));
     GetConVarString(g_Cvar_Pref_Secondary, g_sPref_Secondary, sizeof(g_sPref_Secondary));
     GetConVarString(g_Cvar_Pref_Grenade, g_sPref_Grenade, sizeof(g_sPref_Grenade));
+
+    g_fDelayApplying = GetConVarFloat(g_Cvar_DelayApplying);
 
     LoadConfig();
     CreateMenuCommand();
@@ -602,8 +633,18 @@ public void OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 
     if(g_bAutoRebuy[client])
     {
-        BuySavedLoadout(client, true);
+        CreateTimer(g_fDelayApplying, Timer_Applying, client, _);
     }
+}
+
+public Action Timer_Applying(Handle timer, any client)
+{
+    if(g_bAutoRebuy[client])
+    {
+        BuySavedLoadout(client, true);
+        return Plugin_Handled;
+    }
+    return Plugin_Handled;
 }
 
 public Action Command_Restrict(int client, int args)
@@ -1154,7 +1195,14 @@ void PurchaseWeapon(int client, const char[] entity, bool loadout, bool free = f
                 return;
             }
 
-            float cooldown = g_Weapon[i].data_cooldown;
+            float cooldown;
+            
+            if(g_iCooldownMode == COOLDOWN_GLOBAL)
+                cooldown = g_fGlobalCooldown;
+
+            else
+                cooldown = g_Weapon[i].data_cooldown;
+
             float thetime = GetEngineTime();
             float expirecooldown = GetPurchaseCooldown(client, g_Weapon[i].data_name);
             
