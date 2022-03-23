@@ -107,7 +107,7 @@ public void OnPluginStart()
     g_Cvar_HookOnBuyZone = CreateConVar("sm_gunmenu_hookbuyzone", "1.0", "Also apply purchase method to player purchase with default buy menu from buyzone", _, true, 0.0, true, 1.0);
     g_Cvar_ConfigPath = CreateConVar("sm_gunmenu_configpath", "configs/gun_menu.txt", "Specify the path of config file for gun menu");
     g_Cvar_SaveOnMenuCommand = CreateConVar("sm_gunmenu_saveloadout_onmenu", "1.0", "Save weapon loadout when player do !zbuy <weaponname>", _, true, 0.0, true, 1.0);
-    g_Cvar_CooldownMode = CreateConVar("sm_gunmenu_cooldown_mode", "1.0", "1 = Global Cooldown| 2 = Inviduals Cooldown", _, true, 1.0, true, 2.0);
+    g_Cvar_CooldownMode = CreateConVar("sm_gunmenu_cooldown_mode", "1.0", "0 = Disabled | 1 = Global Cooldown | 2 = Inviduals Cooldown", _, true, 0.0, true, 2.0);
     g_Cvar_GlobalCooldown = CreateConVar("sm_gunmenu_global_cooldown", "5.0", "Length of Global Cooldown in seconds", _, true, 0.0, false);
 
     RegAdminCmd("sm_restrict", Command_Restrict, ADMFLAG_GENERIC);
