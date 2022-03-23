@@ -1226,7 +1226,7 @@ public void PurchaseWeapon(int client, const char[] entity, bool loadout)
             int weapon = GetPlayerWeaponSlot(client, g_Weapon[i].data_slot);
             int slot = g_Weapon[i].data_slot;
 
-            if(slot != SLOT_KNIFE || slot != SLOT_GRENADE)
+            if(slot == SLOT_PRIMARY || slot == SLOT_SECONDARY)
             {
                 if(weapon != -1)
                 {
