@@ -56,11 +56,30 @@ ConVar g_Cvar_PluginTag;
 ConVar g_Cvar_HookOnBuyZone;
 ConVar g_Cvar_ConfigPath;
 ConVar g_Cvar_SaveOnMenuCommand;
+ConVar g_Cvar_CooldownMode;
+ConVar g_Cvar_GlobalCooldown;
 
 char g_sConfigPath[PLATFORM_MAX_PATH];
 
-Handle g_hPurchaseCount[MAXPLAYERS+1];
-Handle g_hPurchaseCooldown[MAXPLAYERS+1];
+int g_iCooldownMode;
+float g_fGlobalCooldown;
+
+int g_iPurchaseCount[64][MAXPLAYERS+1];
+float g_fPurchaseCooldown[64][MAXPLAYERS+1];
+float g_fPurchaseGlobalCooldown[MAXPLAYERS+1];
+
+
+/*
+enum struct ByPassWeapon
+{
+    bool ByPass_Price;
+    bool ByPass_Count;
+    bool ByPass_Restrict;
+    bool ByPass_Cooldown;
+}
+
+ByPassWeapon g_ByPass[64][MAXPLAYERS+1];
+*/
 
 // Client Preferences
 Handle g_hWeaponCookies[WEAPON_SLOT_MAX] = INVALID_HANDLE;
@@ -88,6 +107,8 @@ public void OnPluginStart()
     g_Cvar_HookOnBuyZone = CreateConVar("sm_gunmenu_hookbuyzone", "1.0", "Also apply purchase method to player purchase with default buy menu from buyzone", _, true, 0.0, true, 1.0);
     g_Cvar_ConfigPath = CreateConVar("sm_gunmenu_configpath", "configs/gun_menu.txt", "Specify the path of config file for gun menu");
     g_Cvar_SaveOnMenuCommand = CreateConVar("sm_gunmenu_saveloadout_onmenu", "1.0", "Save weapon loadout when player do !zbuy <weaponname>", _, true, 0.0, true, 1.0);
+    g_Cvar_CooldownMode = CreateConVar("sm_gunmenu_cooldown_mode", "1.0", "1 = Global Cooldown| 2 = Inviduals Cooldown", _, true, 1.0, true, 2.0);
+    g_Cvar_GlobalCooldown = CreateConVar("sm_gunmenu_global_cooldown", "5.0", "Length of Global Cooldown in seconds", _, true, 0.0, false);
 
     RegAdminCmd("sm_restrict", Command_Restrict, ADMFLAG_GENERIC);
     RegAdminCmd("sm_unrestrict", Command_Unrestrict, ADMFLAG_GENERIC);
@@ -105,6 +126,8 @@ public void OnPluginStart()
     HookConVarChange(g_Cvar_HookOnBuyZone, OnHookBuyZoneChanged);
     HookConVarChange(g_Cvar_ConfigPath, OnConfigPathChanged);
     HookConVarChange(g_Cvar_SaveOnMenuCommand, OnSaveOnMenuCommandChanged);
+    HookConVarChange(g_Cvar_CooldownMode, OnCooldownModeChanged);
+    HookConVarChange(g_Cvar_GlobalCooldown, OnGlobalCooldownChanged);
 
     if(g_hRebuyCookies == INVALID_HANDLE)
     {
@@ -145,38 +168,29 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
     MarkNativeAsOptional("SMRPG_Armor_GetClientMaxArmor");
 }
 
+void ResetClientData(int client)
+{
+    for(int i = 0; i < 64; i++)
+    {
+        g_iPurchaseCount[i][client] = 0;
+        g_fPurchaseCooldown[i][client] = 0.0;
+    }
+
+    g_fPurchaseGlobalCooldown[client] = 0.0;
+}
+
 public void OnClientPutInServer(int client)
 {
     SDKHook(client, SDKHook_WeaponCanUse, OnWeaponCanUse);
 
-    if(g_hPurchaseCount[client] != INVALID_HANDLE)
-    {
-        CloseHandle(g_hPurchaseCount[client]);
-    }
-    g_hPurchaseCount[client] = CreateTrie();
-
-    if(g_hPurchaseCooldown[client] != INVALID_HANDLE)
-    {
-        CloseHandle(g_hPurchaseCooldown[client]);
-    }
-    g_hPurchaseCooldown[client] = CreateTrie();
+    ResetClientData(client);
 }
 
 public void OnClientDisconnect(int client)
 {
     SDKUnhook(client, SDKHook_WeaponCanUse, OnWeaponCanUse);
 
-    if(g_hPurchaseCount[client] != INVALID_HANDLE)
-    {
-        CloseHandle(g_hPurchaseCount[client]);
-    }
-    g_hPurchaseCount[client] = INVALID_HANDLE;
-
-    if(g_hPurchaseCooldown[client] != INVALID_HANDLE)
-    {
-        CloseHandle(g_hPurchaseCooldown[client]);
-    }
-    g_hPurchaseCooldown[client] = INVALID_HANDLE;
+    ResetClientData(client);
 }
 
 public void OnBuyZoneChanged(ConVar cvar, const char[] oldValue, const char[] newValue)
@@ -209,6 +223,16 @@ public void OnConfigPathChanged(ConVar cvar, const char[] oldValue, const char[]
 public void OnSaveOnMenuCommandChanged(ConVar cvar, const char[] oldValue, const char[] newValue)
 {
     g_bSaveOnMenuCommand = GetConVarBool(g_Cvar_SaveOnMenuCommand);
+}
+
+public void OnCooldownModeChanged(ConVar cvar, const char[] oldValue, const char[] newValue)
+{
+    g_iCooldownMode = GetConVarInt(g_Cvar_CooldownMode);
+}
+
+public void OnGlobalCooldownChanged(ConVar cvar, const char[] oldValue, const char[] newValue)
+{
+    g_fGlobalCooldown = GetConVarFloat(g_Cvar_GlobalCooldown);
 }
 
 public Action OnWeaponCanUse(int client, int weapon)
@@ -526,20 +550,7 @@ public void OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
         BuySavedLoadout(client, true);
     }
 
-    if(g_hPurchaseCount[client] != INVALID_HANDLE)
-    {
-        ClearTrie(g_hPurchaseCount[client]);
-    }
-
-    if(g_hPurchaseCooldown[client] != INVALID_HANDLE)
-    {
-        ClearTrie(g_hPurchaseCooldown[client]);
-    }
-
-    for(int x = 0; x < g_iTotal; x++)
-    {
-        SetTrieValue(g_hPurchaseCooldown[client], g_Weapon[x].data_name, 0.0, true);
-    }
+    ResetClientData(client);
 }
 
 public Action Command_Restrict(int client, int args)
@@ -1090,9 +1101,23 @@ public void PurchaseWeapon(int client, const char[] entity, bool loadout)
                 return;
             }
 
-            float cooldown = g_Weapon[i].data_cooldown;
+            float cooldown;
+
+            if(g_iCooldownMode == 2)
+                cooldown = g_Weapon[i].data_cooldown;
+
+            else 
+                cooldown = g_fGlobalCooldown;
+
             float thetime = GetEngineTime();
-            float expirecooldown = GetPurchaseCooldown(client, g_Weapon[i].data_name);
+
+            float expirecooldown;
+            
+            if(g_iCooldownMode == 2)
+                expirecooldown = GetPurchaseCooldown(client, g_Weapon[i].data_name);
+
+            else 
+                expirecooldown = g_fPurchaseGlobalCooldown[client];
             
             if(cooldown > 0 && thetime < expirecooldown)
             {
@@ -1195,12 +1220,6 @@ public void PurchaseWeapon(int client, const char[] entity, bool loadout)
                 SetEntProp(client, Prop_Send, "m_bHasHelmet", 1);
                 SetEntProp(client, Prop_Send, "m_iAccount", cash - totalprice);
                 SetPurchaseCount(client, g_Weapon[i].data_name, 1, true);
-
-                if(cooldown > 0)
-                {
-                    SetPurchaseCooldown(client, g_Weapon[i].data_name, thetime + cooldown);
-                }
-
                 return;
             }
 
@@ -1269,7 +1288,11 @@ public void PurchaseWeapon(int client, const char[] entity, bool loadout)
 
             if(cooldown > 0)
             {
-                SetPurchaseCooldown(client, g_Weapon[i].data_name, thetime + cooldown);
+                if(g_iCooldownMode == 2)
+                    SetPurchaseCooldown(client, g_Weapon[i].data_name, thetime + cooldown);
+
+                else
+                    SetPurchaseGlobalCooldown(client, thetime + cooldown);
             }
 
             return;
@@ -1888,36 +1911,54 @@ public int SelectRestrictMenuHandler(Menu menu, MenuAction action, int param1, i
     return 0;
 }
 
+int FindWeaponIndexByName(const char[] weaponname)
+{
+    for(int i = 0; i < g_iTotal; i++)
+    {
+        if(StrEqual(weaponname, g_Weapon[i].data_name))
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
+void SetPurchaseGlobalCooldown(int client, float time)
+{
+    g_fPurchaseGlobalCooldown[client] = time;
+}
+
 void SetPurchaseCooldown(int client, const char[] weaponname, float time)
 {
-    SetTrieValue(g_hPurchaseCooldown[client], weaponname, time);
+    int index = FindWeaponIndexByName(weaponname);
+
+    g_fPurchaseCooldown[index][client] = time;
 }
 
 float GetPurchaseCooldown(int client, const char[] weaponname)
 {
-    float time;
-    GetTrieValue(g_hPurchaseCooldown[client], weaponname, time);
+    int index = FindWeaponIndexByName(weaponname);
 
-    return time;
+    return g_fPurchaseCooldown[index][client];
 }
 
 void SetPurchaseCount(int client, const char[] weaponname, int value, bool add = false)
 {
     int purchasemax;
+    int index = FindWeaponIndexByName(weaponname);
     
     if(add)
     {
         purchasemax = GetPurchaseCount(client, weaponname);
     }
-    SetTrieValue(g_hPurchaseCount[client], weaponname, purchasemax + value);
+    g_iPurchaseCount[index][client] = purchasemax + value;
 }
 
 int GetPurchaseCount(int client, const char[] weaponname)
 {
-    int value;
-    GetTrieValue(g_hPurchaseCount[client], weaponname, value);
+    int index = FindWeaponIndexByName(weaponname);
 
-    return value;
+    return g_iPurchaseCount[index][client];
 }
 
 int GetWeaponPurchaseMax(const char[] weaponname)
