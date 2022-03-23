@@ -58,17 +58,17 @@ ConVar g_Cvar_ConfigPath;
 ConVar g_Cvar_SaveOnMenuCommand;
 ConVar g_Cvar_CooldownMode;
 ConVar g_Cvar_GlobalCooldown;
+ConVar g_Cvar_FreeOnSpawn;
 
 char g_sConfigPath[PLATFORM_MAX_PATH];
 
 int g_iCooldownMode;
 float g_fGlobalCooldown;
+bool g_bFreeOnSpawn;
 
 int g_iPurchaseCount[64][MAXPLAYERS+1];
 float g_fPurchaseCooldown[64][MAXPLAYERS+1];
 float g_fPurchaseGlobalCooldown[MAXPLAYERS+1];
-
-
 
 enum struct ByPassWeapon
 {
@@ -108,6 +108,7 @@ public void OnPluginStart()
     g_Cvar_SaveOnMenuCommand = CreateConVar("sm_gunmenu_saveloadout_onmenu", "1.0", "Save weapon loadout when player do !zbuy <weaponname>", _, true, 0.0, true, 1.0);
     g_Cvar_CooldownMode = CreateConVar("sm_gunmenu_cooldown_mode", "1.0", "0 = Disabled | 1 = Global Cooldown | 2 = Inviduals Cooldown", _, true, 0.0, true, 2.0);
     g_Cvar_GlobalCooldown = CreateConVar("sm_gunmenu_global_cooldown", "5.0", "Length of Global Cooldown in seconds", _, true, 0.0, false);
+    g_Cvar_FreeOnSpawn = CreateConVar("sm_gunmenu_free_onspawn", "1.0", "Free purchase on spawn", _, true, 0.0, true, 1.0);
 
     RegAdminCmd("sm_restrict", Command_Restrict, ADMFLAG_GENERIC);
     RegAdminCmd("sm_unrestrict", Command_Unrestrict, ADMFLAG_GENERIC);
@@ -127,6 +128,7 @@ public void OnPluginStart()
     HookConVarChange(g_Cvar_SaveOnMenuCommand, OnSaveOnMenuCommandChanged);
     HookConVarChange(g_Cvar_CooldownMode, OnCooldownModeChanged);
     HookConVarChange(g_Cvar_GlobalCooldown, OnGlobalCooldownChanged);
+    HookConVarChange(g_Cvar_FreeOnSpawn, OnFreeOnSpawnChanged);
 
     if(g_hRebuyCookies == INVALID_HANDLE)
     {
@@ -160,11 +162,15 @@ public void OnPluginStart()
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
-    g_hOnClientPurchase = CreateGlobalForward("GunMenu_OnClientPurchase", ET_Hook, Param_Cell, Param_String);
+    g_hOnClientPurchase = CreateGlobalForward("GunMenu_OnClientPurchase", ET_Hook, Param_Cell, Param_String, Param_Cell, Param_Cell);
+
+    CreateNative("GunMenu_SetClientByPass", Native_SetClientByPass);
 
     MarkNativeAsOptional("ZR_IsClientZombie");
     MarkNativeAsOptional("ZRiot_IsClientZombie");
     MarkNativeAsOptional("SMRPG_Armor_GetClientMaxArmor");
+
+    return APLRes_Success;
 }
 
 void ResetClientData(int client)
@@ -234,19 +240,24 @@ public void OnGlobalCooldownChanged(ConVar cvar, const char[] oldValue, const ch
     g_fGlobalCooldown = GetConVarFloat(g_Cvar_GlobalCooldown);
 }
 
+public void OnFreeOnSpawnChanged(ConVar cvar, const char[] oldValue, const char[] newValue)
+{
+    g_bFreeOnSpawn = GetConVarBool(g_Cvar_FreeOnSpawn);
+}
+
 public Action OnWeaponCanUse(int client, int weapon)
 {
     char weaponentity[64];
     GetEdictClassname(weapon, weaponentity, sizeof(weaponentity));
 
-    for(int i = 0; i < g_iTotal; i++)
+    int index = FindWeaponIndexByEntityName(weaponentity);
+
+    if(StrEqual(weaponentity, g_Weapon[index].data_entity, false))
     {
-        if(StrEqual(weaponentity, g_Weapon[i].data_entity, false))
+        if(g_Weapon[index].data_restrict)
         {
-            if(g_Weapon[i].data_restrict)
-            {
+            if(!IsClientByPassRestrict(client, index))
                 return Plugin_Handled;
-            }
         }
     }
     return Plugin_Continue;
@@ -1055,9 +1066,9 @@ public int SelectMenuHandler(Menu menu, MenuAction action, int param1, int param
     return 0;
 }
 
-public void PurchaseWeapon(int client, const char[] entity, bool loadout)
+void PurchaseWeapon(int client, const char[] entity, bool loadout, bool free = false)
 {
-    Action result = ForwardOnClientPurchase(client, entity);
+    Action result = ForwardOnClientPurchase(client, entity, loadout, free);
 
     if(result == Plugin_Handled)
     {
@@ -1096,10 +1107,13 @@ public void PurchaseWeapon(int client, const char[] entity, bool loadout)
 
     if(StrEqual(entity, g_Weapon[index].data_entity, false))
     {
-        if(g_Weapon[index].data_restrict == true)
+        if(g_Weapon[index].data_restrict)
         {
-            PrintToChat(client, " \x04%s\x01 Weapon \x06\"%s\" \x01has been restricted.", sTag, g_Weapon[index].data_name);
-            return;
+            if(!IsClientByPassRestrict(client, index))
+            {
+                PrintToChat(client, " \x04%s\x01 Weapon \x06\"%s\" \x01has been restricted.", sTag, g_Weapon[index].data_name);
+                return;
+            }
         }
 
         float cooldown;
@@ -1122,8 +1136,11 @@ public void PurchaseWeapon(int client, const char[] entity, bool loadout)
         
         if(cooldown > 0 && thetime < expirecooldown)
         {
-            PrintToChat(client, " \x04%s\x01 Weapon \x06\"%s\" \x01purchasing is on the cooldown. Available again in \x06%d\x01 seconds.", sTag, g_Weapon[index].data_name, RoundToNearest(expirecooldown - thetime));
-            return;
+            if(!IsClientByPassCooldown(client, index))
+            {
+                PrintToChat(client, " \x04%s\x01 Weapon \x06\"%s\" \x01purchasing is on the cooldown. Available again in \x06%d\x01 seconds.", sTag, g_Weapon[index].data_name, RoundToNearest(expirecooldown - thetime));
+                return;
+            }
         }
 
         int purchasemax = GetWeaponPurchaseMax(g_Weapon[index].data_name);
@@ -1132,8 +1149,11 @@ public void PurchaseWeapon(int client, const char[] entity, bool loadout)
 
         if(purchasemax > 0 && purchaseleft <= 0)
         {
-            PrintToChat(client, " \x04%s\x01 You have reached maximum purchase for \x04\"%s\"\x01. You can purchase it again on next round.", sTag, g_Weapon[index].data_name);
-            return;
+            if(!IsClientByPassCount(client, index))
+            {
+                PrintToChat(client, " \x04%s\x01 You have reached maximum purchase for \x04\"%s\"\x01. You can purchase it again on next round.", sTag, g_Weapon[index].data_name);
+                return;
+            }
         }
 
         int cash = GetEntProp(client, Prop_Send, "m_iAccount");
@@ -1162,8 +1182,11 @@ public void PurchaseWeapon(int client, const char[] entity, bool loadout)
 
         if(totalprice > cash)
         {
-            PrintToChat(client, " \x04%s\x01 You don't have enough cash to purchase this item.", sTag);
-            return;
+            if(!IsClientByPassPrice(client, index))
+            {   
+                PrintToChat(client, " \x04%s\x01 You don't have enough cash to purchase this item.", sTag);
+                return;
+            }
         }
 
         if(StrEqual(entity, "weapon_kevlar"))
@@ -1172,7 +1195,7 @@ public void PurchaseWeapon(int client, const char[] entity, bool loadout)
             {
                 if(!ismulti)
                 {
-                    if(purchasemax == 0)
+                    if(purchasemax == 0 || IsClientByPassCount(client, index))
                     {
                         PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01. Select weapon from menu or use command to purchase again.", sTag, g_Weapon[index].data_name);
                     }
@@ -1185,24 +1208,38 @@ public void PurchaseWeapon(int client, const char[] entity, bool loadout)
                 {
                     if(purchasemax == 0)
                     {
-                        if(purchasecount > 0)
+                        if(IsClientByPassCount(client, index))
                         {
-                            PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01 for \x06%i$\x01 because you re-purchase this weapon again.", sTag, g_Weapon[index].data_name, totalprice);
+                            PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01. Select weapon from menu or use command to purchase again.", sTag, g_Weapon[index].data_name);
                         }
                         else
-                        {
-                            PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01. Next time it will cost \x06\"x%0.2f\" \x01from original price to purchase.", sTag, g_Weapon[index].data_name, multiprice);
+                        {                      
+                            if(purchasecount > 0)
+                            {
+                                PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01 for \x06%i$\x01 because you re-purchase this weapon again.", sTag, g_Weapon[index].data_name, totalprice);
+                            }
+                            else
+                            {
+                                PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01. Next time it will cost \x06\"x%0.2f\" \x01from original price to purchase.", sTag, g_Weapon[index].data_name, multiprice);
+                            }
                         }
                     }
                     else
                     {
-                        if(purchasecount > 0)
+                        if(IsClientByPassCount(client, index))
                         {
-                            PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01 for \x06%i$\x01 because you re-purchase this weapon again. And you only can purchase this item again \x06%i\x01 times.", sTag, g_Weapon[index].data_name, totalprice, purchaseleft);
+                            PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01. Select weapon from menu or use command to purchase again.", sTag, g_Weapon[index].data_name);
                         }
                         else
                         {
-                            PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01. Next time it will cost \x06\"x%0.2f\"\x01 from original price to purchase. And you only can purchase this item again \x06%i\x01 times.", sTag, g_Weapon[index].data_name, multiprice, purchaseleft);
+                            if(purchasecount > 0)
+                            {
+                                PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01 for \x06%i$\x01 because you re-purchase this weapon again. And you only can purchase this item again \x06%i\x01 times.", sTag, g_Weapon[index].data_name, totalprice, purchaseleft);
+                            }
+                            else
+                            {
+                                PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01. Next time it will cost \x06\"x%0.2f\"\x01 from original price to purchase. And you only can purchase this item again \x06%i\x01 times.", sTag, g_Weapon[index].data_name, multiprice, purchaseleft);
+                            }
                         }
                     }
                 }
@@ -1219,8 +1256,13 @@ public void PurchaseWeapon(int client, const char[] entity, bool loadout)
             }
 
             SetEntProp(client, Prop_Send, "m_bHasHelmet", 1);
-            SetEntProp(client, Prop_Send, "m_iAccount", cash - totalprice);
-            SetPurchaseCount(client, g_Weapon[index].data_name, 1, true);
+
+            if(!IsClientByPassPrice(client, index) && !free)
+                SetEntProp(client, Prop_Send, "m_iAccount", cash - totalprice);
+
+            if(!IsClientByPassCount(client, index))
+                SetPurchaseCount(client, g_Weapon[index].data_name, 1, true);
+
             return;
         }
 
@@ -1239,7 +1281,7 @@ public void PurchaseWeapon(int client, const char[] entity, bool loadout)
         {
             if(!ismulti)
             {
-                if(purchasemax == 0)
+                if(purchasemax == 0 || IsClientByPassCount(client, index))
                 {
                     PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01. Select weapon from menu or use command to purchase again.", sTag, g_Weapon[index].data_name);
                 }
@@ -1252,30 +1294,46 @@ public void PurchaseWeapon(int client, const char[] entity, bool loadout)
             {
                 if(purchasemax == 0)
                 {
-                    if(purchasecount > 0)
+                    if(IsClientByPassCount(client, index))
                     {
-                        PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01 for \x06%i$\x01 because you re-purchase this weapon again.", sTag, g_Weapon[index].data_name, totalprice);
+                        PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01. Select weapon from menu or use command to purchase again.", sTag, g_Weapon[index].data_name);
                     }
                     else
-                    {
-                        PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01. Next time it will cost \x06\"x%0.2f\"\x01 from original price to purchase.", sTag, g_Weapon[index].data_name, multiprice);
+                    {                      
+                        if(purchasecount > 0)
+                        {
+                            PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01 for \x06%i$\x01 because you re-purchase this weapon again.", sTag, g_Weapon[index].data_name, totalprice);
+                        }
+                        else
+                        {
+                            PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01. Next time it will cost \x06\"x%0.2f\" \x01from original price to purchase.", sTag, g_Weapon[index].data_name, multiprice);
+                        }
                     }
                 }
                 else
                 {
-                    if(purchasecount > 0)
+                    if(IsClientByPassCount(client, index))
                     {
-                        PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01 for \x06%i$\x01 because you re-purchase this weapon again. And you only can purchase this item again \x06%i\x01 times.", sTag, g_Weapon[index].data_name, totalprice, purchaseleft);
+                        PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01. Select weapon from menu or use command to purchase again.", sTag, g_Weapon[index].data_name);
                     }
                     else
                     {
-                        PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01. Next time it will cost \x06\"x%0.2f\"\x01 from original price to purchase. And you only can purchase this item again \x06%i\x01 times.", sTag, g_Weapon[index].data_name, multiprice, purchaseleft);
+                        if(purchasecount > 0)
+                        {
+                            PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01 for \x06%i$\x01 because you re-purchase this weapon again. And you only can purchase this item again \x06%i\x01 times.", sTag, g_Weapon[index].data_name, totalprice, purchaseleft);
+                        }
+                        else
+                        {
+                            PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01. Next time it will cost \x06\"x%0.2f\"\x01 from original price to purchase. And you only can purchase this item again \x06%i\x01 times.", sTag, g_Weapon[index].data_name, multiprice, purchaseleft);
+                        }
                     }
                 }
             }
         }
 
-        SetEntProp(client, Prop_Send, "m_iAccount", cash - totalprice);
+        if(!IsClientByPassPrice(client, index) && !free)
+            SetEntProp(client, Prop_Send, "m_iAccount", cash - totalprice);
+
         if(StrEqual(g_Weapon[index].data_entity, "weapon_hkp2000", false))
         {
             GivePlayerItem2(client, g_Weapon[index].data_entity);
@@ -1285,15 +1343,19 @@ public void PurchaseWeapon(int client, const char[] entity, bool loadout)
             GivePlayerItem(client, g_Weapon[index].data_entity);
         }
         
-        SetPurchaseCount(client, g_Weapon[index].data_name, 1, true);
+        if(!IsClientByPassCount(client, index))
+            SetPurchaseCount(client, g_Weapon[index].data_name, 1, true);
 
         if(cooldown > 0)
         {
-            if(g_iCooldownMode == 2)
-                SetPurchaseCooldown(client, g_Weapon[index].data_name, thetime + cooldown);
+            if(!IsClientByPassCooldown(client, index))
+            {
+                if(g_iCooldownMode == 2)
+                    SetPurchaseCooldown(client, g_Weapon[index].data_name, thetime + cooldown);
 
-            else
-                SetPurchaseGlobalCooldown(client, thetime + cooldown);
+                else
+                    SetPurchaseGlobalCooldown(client, thetime + cooldown);
+            }
         }
 
         return;
@@ -1438,7 +1500,7 @@ void BuySavedLoadout(int client, bool spawn)
                 {
                     if(!StrEqual(weaponentity, g_Weapon[x].data_entity))
                     {
-                        PurchaseWeapon(client, g_Weapon[x].data_entity, true);
+                        PurchaseWeapon(client, g_Weapon[x].data_entity, true, g_bFreeOnSpawn);
                     }
                 }
                 else
@@ -1988,16 +2050,57 @@ int GetWeaponPurchaseMax(const char[] weaponname)
     return maxpurchase;
 }
 
-Action ForwardOnClientPurchase(int client, const char[] weaponentity)
+Action ForwardOnClientPurchase(int client, const char[] weaponentity, bool loadout, bool free)
 {
     Call_StartForward(g_hOnClientPurchase);
 
     Call_PushCell(client);
     Call_PushString(weaponentity);
+    Call_PushCell(loadout);
+    Call_PushCell(free);
 
     Action result;
     Call_Finish(result);
     return result;
+}
+
+public int Native_SetClientByPass(Handle plugin, int numParams)
+{
+    int client = GetNativeCell(1);
+
+    char weaponentity[64];
+    GetNativeString(2, weaponentity, 64);
+
+    ByPassType type = view_as<ByPassType>(GetNativeCell(3));
+    bool allow = view_as<bool>(GetNativeCell(4));
+
+    PreSetClientByPass(client, weaponentity, type, allow);
+}
+
+void PreSetClientByPass(int client, char[] weaponentity, ByPassType type, bool allow)
+{
+    int weaponindex = FindWeaponIndexByEntityName(weaponentity);
+
+    switch (type)
+    {
+        case BYPASS_PRICE:
+        {
+            SetClientByPassPrice(client, weaponindex, allow);
+        }
+        case BYPASS_COUNT:
+        {
+            SetClientByPassCount(client, weaponindex, allow);
+        }
+        case BYPASS_RESTRICT:
+        {
+            SetClientByPassRestrict(client, weaponindex, allow);
+        }
+        case BYPASS_COOLDOWN:
+        {
+            SetClientByPassCooldown(client, weaponindex, allow);
+        }
+    }
+    return;
 }
 
 stock bool IsClientAdmin(int client)
