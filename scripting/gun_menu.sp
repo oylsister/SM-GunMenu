@@ -69,7 +69,7 @@ float g_fPurchaseCooldown[64][MAXPLAYERS+1];
 float g_fPurchaseGlobalCooldown[MAXPLAYERS+1];
 
 
-/*
+
 enum struct ByPassWeapon
 {
     bool ByPass_Price;
@@ -79,7 +79,6 @@ enum struct ByPassWeapon
 }
 
 ByPassWeapon g_ByPass[64][MAXPLAYERS+1];
-*/
 
 // Client Preferences
 Handle g_hWeaponCookies[WEAPON_SLOT_MAX] = INVALID_HANDLE;
@@ -545,9 +544,11 @@ public Action CS_OnBuyCommand(int client, const char[] weapon)
 public void OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {
     int client = GetClientOfUserId(GetEventInt(event, "userid"));
+
     if(g_bAutoRebuy[client])
     {
-        BuySavedLoadout(client, true);
+        if(ZR_IsClientHuman(client))
+            BuySavedLoadout(client, true);
     }
 
     ResetClientData(client);
@@ -2025,4 +2026,44 @@ stock void GivePlayerItem2(int client, const char[] weaponentity)
     }
     GivePlayerItem(client, weaponentity);
     SetEntProp(client, Prop_Send, "m_iTeamNum", team);
+}
+
+stock void SetClientByPassPrice(int client, int weaponindex, bool value)
+{
+    g_ByPass[weaponindex][client].ByPass_Price = value;
+}
+
+stock void SetClientByPassCount(int client, int weaponindex, bool value) 
+{
+    g_ByPass[weaponindex][client].ByPass_Count = value;
+}
+
+stock void SetClientByPassCooldown(int client, int weaponindex, bool value) 
+{
+    g_ByPass[weaponindex][client].ByPass_Cooldown = value;
+}
+
+stock void SetClientByPassRestrict(int client, int weaponindex, bool value) 
+{
+    g_ByPass[weaponindex][client].ByPass_Restrict = value;
+}
+
+stock bool IsClientByPassPrice(int client, int weaponindex)
+{
+    return g_ByPass[weaponindex][client].ByPass_Price;
+}
+
+stock bool IsClientByPassCount(int client, int weaponindex)
+{
+    return g_ByPass[weaponindex][client].ByPass_Count;
+}
+
+stock bool IsClientByPassCooldown(int client, int weaponindex)
+{
+    return g_ByPass[weaponindex][client].ByPass_Cooldown;
+}
+
+stock bool IsClientByPassRestrict(int client, int weaponindex)
+{
+    return g_ByPass[weaponindex][client].ByPass_Restrict;
 }
