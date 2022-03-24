@@ -76,6 +76,8 @@ enum struct ByPassWeapon
 
 ByPassWeapon g_ByPass[64][MAXPLAYERS+1];
 
+bool g_bByPass_GlobalCooldown[MAXPLAYERS+1];
+
 int g_iPurchaseCount[64][MAXPLAYERS+1];
 float g_fPurchaseCooldown[64][MAXPLAYERS+1];
 float g_fPurchaseGlobalCooldown[MAXPLAYERS+1];
@@ -94,7 +96,7 @@ public Plugin myinfo =
     name = "[CSGO/CSS] Gun Menu",
     author = "Oylsister",
     description = "Purchase weapon from the menu and create specific command to purchase specific weapon",
-    version = "3.0",
+    version = "3.1",
     url = "https://github.com/oylsister/SM-GunMenu"
 };
 
@@ -195,6 +197,8 @@ void ResetByPass(int client)
         g_ByPass[i][client].ByPass_Restrict = false;
         g_ByPass[i][client].ByPass_Cooldown = false;
     }
+
+    g_bByPass_GlobalCooldown[client] = false;
 }
 
 public void OnClientPutInServer(int client)
@@ -1156,12 +1160,15 @@ void PurchaseWeapon(int client, const char[] entity, bool loadout, bool free = f
         else 
             expirecooldown = g_fPurchaseGlobalCooldown[client];
         
-        if(cooldown > 0 && thetime < expirecooldown && !loadout)
+        if(!IsClientByPassGlobalCooldown(client))
         {
-            if(!IsClientByPassCooldown(client, index))
+            if(cooldown > 0 && thetime < expirecooldown && !loadout)
             {
-                PrintToChat(client, " \x04%s\x01 Weapon \x06\"%s\" \x01purchasing is on the cooldown. Available again in \x06%d\x01 seconds.", sTag, g_Weapon[index].data_name, RoundToNearest(expirecooldown - thetime));
-                return;
+                if(!IsClientByPassCooldown(client, index))
+                {
+                    PrintToChat(client, " \x04%s\x01 Weapon \x06\"%s\" \x01purchasing is on the cooldown. Available again in \x06%d\x01 seconds.", sTag, g_Weapon[index].data_name, RoundToNearest(expirecooldown - thetime));
+                    return;
+                }
             }
         }
 
@@ -2118,6 +2125,10 @@ void PreSetClientByPass(int client, char[] weaponentity, ByPassType type, bool a
         {
             SetClientByPassCooldown(client, weaponindex, allow);
         }
+        case BYPASS_GLOBALCOOLDOWN:
+        {
+            SetClientByPassGlobalCooldown(client, allow);
+        }
     }
     return;
 }
@@ -2155,6 +2166,10 @@ bool PreCheckClientByPass(int client, char[] weaponentity, ByPassType type)
         case BYPASS_COOLDOWN:
         {
             return IsClientByPassCooldown(client, weaponindex);
+        }
+        case BYPASS_GLOBALCOOLDOWN:
+        {
+            return IsClientByPassGlobalCooldown(client);
         }
     }
     return false;
@@ -2216,6 +2231,11 @@ stock void SetClientByPassRestrict(int client, int weaponindex, bool value)
     g_ByPass[weaponindex][client].ByPass_Restrict = value;
 }
 
+stock void SetClientByPassGlobalCooldown(int client, bool value)
+{
+    g_bByPass_GlobalCooldown[client] = value;
+}
+
 stock bool IsClientByPassPrice(int client, int weaponindex)
 {
     return g_ByPass[weaponindex][client].ByPass_Price;
@@ -2234,4 +2254,9 @@ stock bool IsClientByPassCooldown(int client, int weaponindex)
 stock bool IsClientByPassRestrict(int client, int weaponindex)
 {
     return g_ByPass[weaponindex][client].ByPass_Restrict;
+}
+
+stock bool IsClientByPassGlobalCooldown(int client)
+{
+    return g_bByPass_GlobalCooldown[client];
 }
