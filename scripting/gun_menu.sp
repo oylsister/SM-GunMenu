@@ -267,6 +267,9 @@ public Action OnWeaponCanUse(int client, int weapon)
 
     int index = FindWeaponIndexByEntityName(weaponentity);
 
+    if(index == -1)
+        return Plugin_Continue;
+
     if(StrEqual(weaponentity, g_Weapon[index].data_entity, false))
     {
         if(g_Weapon[index].data_restrict)
@@ -330,6 +333,10 @@ public void OnConfigsExecuted()
     GetConVarString(g_Cvar_PluginTag, sTag, sizeof(sTag));
     g_bBuyZoneOnly = GetConVarBool(g_Cvar_BuyZoneOnly);
     GetConVarString(g_Cvar_ConfigPath, g_sConfigPath, sizeof(g_sConfigPath));
+    g_bSaveOnMenuCommand = GetConVarBool(g_Cvar_SaveOnMenuCommand);
+    g_iCooldownMode = GetConVarInt(g_Cvar_CooldownMode);
+    g_fGlobalCooldown = GetConVarFloat(g_Cvar_GlobalCooldown);
+    g_bFreeOnSpawn = GetConVarBool(g_Cvar_FreeOnSpawn);
 
     LoadConfig();
     CreateMenuCommand();
