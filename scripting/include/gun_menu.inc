@@ -45,7 +45,7 @@ forward Action GunMenu_OnClientPurchase(int client, const char[] weaponentity, b
  *
  * void PreSetClientByPass(int client, char[] weaponentity, ByPassType type, bool allow)
  */
-native void GunMenu_SetClientByPass(int client, char weaponentity, ByPassType type, bool allow);
+native void GunMenu_SetClientByPass(int client, char[] weaponentity, ByPassType type, bool allow);
 
 /**
  * Check if client have specific bypass privilege for this weapon. 
@@ -56,7 +56,7 @@ native void GunMenu_SetClientByPass(int client, char weaponentity, ByPassType ty
  *
  * return true if they're bypassed or false otherwise.
  */
-native bool GunMenu_CheckClientByPass(int client, char weaponentity, ByPassType type);
+native bool GunMenu_CheckClientByPass(int client, char[] weaponentity, ByPassType type);
 
 /**
  * Get weapon index which in gun_menu plugins config file
@@ -65,4 +65,4 @@ native bool GunMenu_CheckClientByPass(int client, char weaponentity, ByPassType 
  *
  * return weaponindex, if weapon is not found return -1.
  */
-native int GunMenu_GetWeaponIndexByEntityName(const char weaponentity);
+native int GunMenu_GetWeaponIndexByEntityName(const char[] weaponentity);
