@@ -94,7 +94,7 @@ public Plugin myinfo =
     name = "[CSGO/CSS] Gun Menu",
     author = "Oylsister",
     description = "Purchase weapon from the menu and create specific command to purchase specific weapon",
-    version = "2.0",
+    version = "3.0",
     url = "https://github.com/oylsister/SM-GunMenu"
 };
 
@@ -1156,7 +1156,7 @@ void PurchaseWeapon(int client, const char[] entity, bool loadout, bool free = f
         else 
             expirecooldown = g_fPurchaseGlobalCooldown[client];
         
-        if(cooldown > 0 && thetime < expirecooldown)
+        if(cooldown > 0 && thetime < expirecooldown && !loadout)
         {
             if(!IsClientByPassCooldown(client, index))
             {
