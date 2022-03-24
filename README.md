@@ -4,7 +4,7 @@ Purchase weapon through command and menu with customizable config for gun comman
 **\*Check out branch 'dev' for experimental updates.\***
 
 ## Feature
-- Restrict Option Including Weapon Type (NEW)
+- Restrict Option Including Weapon Type.
 - Allowing Player to save their own loadout.
 - Allowing Customize more than 1 command for each gun.
 - Toggleable Auto-Rebuy on Spawn.
@@ -12,7 +12,9 @@ Purchase weapon through command and menu with customizable config for gun comman
 - Allowing Customize more than 1 command for menu.
 - Maximum Purchase for each weapon.
 - Multi Price on Second Purchase for each weapon.
-- Cooldown purchase for each weapon.
+- Cooldown purchase for each weapon or Global cooldown for all weapon (NEW)
+- Toggleable for free purchase on spawn (NEW)
+- By Pass mode for completely ignore Restriction, Purchase Count, Price and Purchase Cooldown (NEW)
 
 ## Convar
 ```
@@ -44,6 +46,26 @@ sm_gunmenu_prefix "[ZBuy]"
 // - 
 // Default: "configs/gun_menu.txt"
 sm_gunmenu_configpath "configs/gun_menu.txt"
+
+// 0 = Disabled | 1 = Global Cooldown | 2 = Inviduals Cooldown
+// -
+// Default: "1.0"
+// Minimum: "0.000000"
+// Maximum: "2.000000"
+sm_gunmenu_cooldown_mode "1.0"
+
+// Free purchase on spawn
+// -
+// Default: "1.0"
+// Minimum: "0.000000"
+// Maximum: "1.000000"
+sm_gunmenu_free_onspawn "1.0"
+
+// Length of Global Cooldown in seconds
+// -
+// Default: "5.0"
+// Minimum: "0.000000"
+sm_gunmenu_global_cooldown "5.0"
 ```
 
 ## Example Config
