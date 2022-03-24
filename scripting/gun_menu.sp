@@ -66,6 +66,16 @@ int g_iCooldownMode;
 float g_fGlobalCooldown;
 bool g_bFreeOnSpawn;
 
+enum struct ByPassWeapon
+{
+    bool ByPass_Price;
+    bool ByPass_Count;
+    bool ByPass_Restrict;
+    bool ByPass_Cooldown;
+}
+
+ByPassWeapon g_ByPass[64][MAXPLAYERS+1];
+
 int g_iPurchaseCount[64][MAXPLAYERS+1];
 float g_fPurchaseCooldown[64][MAXPLAYERS+1];
 float g_fPurchaseGlobalCooldown[MAXPLAYERS+1];

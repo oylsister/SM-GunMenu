@@ -12,16 +12,6 @@ enum ByPassType
     BYPASS_COOLDOWN,
 }
 
-enum struct ByPassWeapon
-{
-    bool ByPass_Price;
-    bool ByPass_Count;
-    bool ByPass_Restrict;
-    bool ByPass_Cooldown;
-}
-
-ByPassWeapon g_ByPass[64][MAXPLAYERS+1];
-
 /**
  * Called when a client is about to purchase through Gun-Menu plugin
  *
