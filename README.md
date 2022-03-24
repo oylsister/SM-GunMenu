@@ -1,7 +1,7 @@
 # [CS:GO/CS:S] SM-GunMenu
-Purchase weapon through command and menu with customizable config for gun command.
+Purchase weapon through command and menu with customizable config for gun command. And completely replacement for ZMarket on Zombie:Reloaded
 
-**\*Check out branch 'dev' for experimental updates.\***
+**\*I'm no longer working on 'Dev' branch. So check out Stable branch\***
 
 ## Feature
 - Restrict Option Including Weapon Type.
