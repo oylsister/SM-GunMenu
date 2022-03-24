@@ -1370,14 +1370,11 @@ void PurchaseWeapon(int client, const char[] entity, bool loadout, bool free = f
 
         if(cooldown > 0)
         {
-            if(!IsClientByPassCooldown(client, index))
-            {
-                if(g_iCooldownMode == 2)
-                    SetPurchaseCooldown(client, g_Weapon[index].data_name, thetime + cooldown);
+            if(g_iCooldownMode == 2)
+                SetPurchaseCooldown(client, g_Weapon[index].data_name, thetime + cooldown);
 
-                else
-                    SetPurchaseGlobalCooldown(client, thetime + cooldown);
-            }
+            else
+                SetPurchaseGlobalCooldown(client, thetime + cooldown);
         }
 
         return;
