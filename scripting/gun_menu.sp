@@ -176,11 +176,23 @@ void ResetClientData(int client)
     g_fPurchaseGlobalCooldown[client] = 0.0;
 }
 
+void ResetByPass(int client)
+{
+    for(int i = 0; i < 64; i++)
+    {
+        g_ByPass[i][client].ByPass_Price = false;
+        g_ByPass[i][client].ByPass_Count = false;
+        g_ByPass[i][client].ByPass_Restrict = false;
+        g_ByPass[i][client].ByPass_Cooldown = false;
+    }
+}
+
 public void OnClientPutInServer(int client)
 {
     SDKHook(client, SDKHook_WeaponCanUse, OnWeaponCanUse);
 
     ResetClientData(client);
+    ResetByPass(client);
 }
 
 public void OnClientDisconnect(int client)
@@ -188,6 +200,7 @@ public void OnClientDisconnect(int client)
     SDKUnhook(client, SDKHook_WeaponCanUse, OnWeaponCanUse);
 
     ResetClientData(client);
+    ResetByPass(client);
 }
 
 public void OnBuyZoneChanged(ConVar cvar, const char[] oldValue, const char[] newValue)
