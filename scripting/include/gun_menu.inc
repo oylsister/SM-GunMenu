@@ -12,6 +12,16 @@ enum ByPassType
     BYPASS_COOLDOWN,
 }
 
+enum struct ByPassWeapon
+{
+    bool ByPass_Price;
+    bool ByPass_Count;
+    bool ByPass_Restrict;
+    bool ByPass_Cooldown;
+}
+
+ByPassWeapon g_ByPass[64][MAXPLAYERS+1];
+
 /**
  * Called when a client is about to purchase through Gun-Menu plugin
  *
@@ -36,3 +46,23 @@ forward Action GunMenu_OnClientPurchase(int client, const char[] weaponentity, b
  * void PreSetClientByPass(int client, char[] weaponentity, ByPassType type, bool allow)
  */
 native void GunMenu_SetClientByPass(int client, char weaponentity, ByPassType type, bool allow);
+
+/**
+ * Check if client have specific bypass privilege for this weapon. 
+ *
+ * @param client        the client index.
+ * @param weaponentity  The weapoon entity name.
+ * @param type          Bypass type to use.
+ *
+ * return true if they're bypassed or false otherwise.
+ */
+native bool GunMenu_CheckClientByPass(int client, char weaponentity, ByPassType type);
+
+/**
+ * Get weapon index which in gun_menu plugins config file
+ *
+ * @param weaponentity  The weapoon entity name.
+ *
+ * return weaponindex, if weapon is not found return -1.
+ */
+native int GunMenu_GetWeaponIndexByEntityName(const char weaponentity);

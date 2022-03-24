@@ -70,16 +70,6 @@ int g_iPurchaseCount[64][MAXPLAYERS+1];
 float g_fPurchaseCooldown[64][MAXPLAYERS+1];
 float g_fPurchaseGlobalCooldown[MAXPLAYERS+1];
 
-enum struct ByPassWeapon
-{
-    bool ByPass_Price;
-    bool ByPass_Count;
-    bool ByPass_Restrict;
-    bool ByPass_Cooldown;
-}
-
-ByPassWeapon g_ByPass[64][MAXPLAYERS+1];
-
 // Client Preferences
 Handle g_hWeaponCookies[WEAPON_SLOT_MAX] = INVALID_HANDLE;
 Handle g_hRebuyCookies = INVALID_HANDLE;
@@ -165,6 +155,8 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
     g_hOnClientPurchase = CreateGlobalForward("GunMenu_OnClientPurchase", ET_Hook, Param_Cell, Param_String, Param_Cell, Param_Cell);
 
     CreateNative("GunMenu_SetClientByPass", Native_SetClientByPass);
+    CreateNative("GunMenu_CheckClientByPass", Native_CheckClientByPass);
+    CreateNative("GunMenu_GetWeaponIndexByEntityName", Native_GetWeaponIndexByEntityName);
 
     MarkNativeAsOptional("ZR_IsClientZombie");
     MarkNativeAsOptional("ZRiot_IsClientZombie");
@@ -2101,6 +2093,52 @@ void PreSetClientByPass(int client, char[] weaponentity, ByPassType type, bool a
         }
     }
     return;
+}
+
+public int Native_CheckClientByPass(Handle plugin, int numParams)
+{
+    int client = GetNativeCell(1);
+
+    char weaponentity[64];
+    GetNativeString(2, weaponentity, 64);
+
+    ByPassType type = view_as<ByPassType>(GetNativeCell(3));
+
+    return PreCheckClientByPass(client, weaponentity, type);
+}
+
+bool PreCheckClientByPass(int client, char[] weaponentity, ByPassType type)
+{
+    int weaponindex = FindWeaponIndexByEntityName(weaponentity);
+
+    switch (type)
+    {
+        case BYPASS_PRICE:
+        {
+            return IsClientByPassPrice(client, weaponindex);
+        }
+        case BYPASS_COUNT:
+        {
+            return IsClientByPassCount(client, weaponindex);
+        }
+        case BYPASS_RESTRICT:
+        {
+            return IsClientByPassRestrict(client, weaponindex);
+        }
+        case BYPASS_COOLDOWN:
+        {
+            return IsClientByPassCooldown(client, weaponindex);
+        }
+    }
+    return false;
+}
+
+public int Native_GetWeaponIndexByEntityName(Handle plugin, int numParams)
+{
+    char weaponentity[64];
+    GetNativeString(1, weaponentity, 64);
+
+    return FindWeaponIndexByEntityName(weaponentity);
 }
 
 stock bool IsClientAdmin(int client)
