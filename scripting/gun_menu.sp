@@ -1483,7 +1483,13 @@ void SaveCurrentLoadout(int client, int slot)
 
     char weaponentity[64];
     int weapon = GetPlayerWeaponSlot(client, slot);
-    GetEdictClassname(weapon, weaponentity, sizeof(weaponentity));
+
+    if(weapon == -1)
+    {
+        return;
+    }
+
+    GetEntityClassname(weapon, weaponentity, sizeof(weaponentity));
 
     for(int i = 0; i < g_iTotal; i++)
     {
@@ -1491,7 +1497,7 @@ void SaveCurrentLoadout(int client, int slot)
         {
             char weaponname[64];
             Format(weaponname, sizeof(weaponname), "%s", g_Weapon[i].data_name);
-            SaveLoadoutCookie(client, i, weaponname);
+            SaveLoadoutCookie(client, slot, weaponname);
             return;
         }
     }
