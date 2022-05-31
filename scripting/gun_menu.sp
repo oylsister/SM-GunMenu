@@ -60,6 +60,20 @@ ConVar g_Cvar_CooldownMode;
 ConVar g_Cvar_GlobalCooldown;
 ConVar g_Cvar_FreeOnSpawn;
 
+// Default Weapon
+ConVar g_Cvar_Def_Primary;
+ConVar g_Cvar_Def_Secondary;
+ConVar g_Cvar_Free_Kevlar;
+ConVar g_Cvar_Free_HE;
+
+char sDefPrimary[64];
+char sDefSecondary[64];
+
+bool g_bFreeKevlar;
+bool g_bFreeHe;
+
+bool g_bZombieSpawned;
+
 char g_sConfigPath[PLATFORM_MAX_PATH];
 
 int g_iCooldownMode;
@@ -112,6 +126,11 @@ public void OnPluginStart()
     g_Cvar_GlobalCooldown = CreateConVar("sm_gunmenu_global_cooldown", "5.0", "Length of Global Cooldown in seconds", _, true, 0.0, false);
     g_Cvar_FreeOnSpawn = CreateConVar("sm_gunmenu_free_onspawn", "1.0", "Free purchase on spawn", _, true, 0.0, true, 1.0);
 
+    g_Cvar_Def_Primary = CreateConVar("sm_gunmenu_default_primary", "P90", "Default Primary weapon");
+    g_Cvar_Def_Secondary = CreateConVar("sm_gunmenu_default_primary", "Elite", "Default Secondary weapon");
+    g_Cvar_Free_Kevlar = CreateConVar("sm_gunmenu_free_kevlar", "1", "Give Free Kevlar to player", _, true, 0.0, true, 1.0);
+    g_Cvar_Free_HE = CreateConVar("sm_gunmenu_free_he", "1", "Give Free HE to player", _, true, 0.0, true, 1.0);
+
     RegAdminCmd("sm_restrict", Command_Restrict, ADMFLAG_GENERIC);
     RegAdminCmd("sm_unrestrict", Command_Unrestrict, ADMFLAG_GENERIC);
     RegAdminCmd("sm_slot", GetSlotCommand, ADMFLAG_GENERIC);
@@ -121,6 +140,7 @@ public void OnPluginStart()
     g_bCommandInitialized = false;
 
     HookEvent("player_spawn", OnPlayerSpawn);
+    HookEvent("round_start", OnRoundStart);
 
     HookConVarChange(g_Cvar_BuyZoneOnly, OnBuyZoneChanged);
     HookConVarChange(g_Cvar_Command, OnCommandChanged);
@@ -131,6 +151,11 @@ public void OnPluginStart()
     HookConVarChange(g_Cvar_CooldownMode, OnCooldownModeChanged);
     HookConVarChange(g_Cvar_GlobalCooldown, OnGlobalCooldownChanged);
     HookConVarChange(g_Cvar_FreeOnSpawn, OnFreeOnSpawnChanged);
+
+    HookConVarChange(g_Cvar_Def_Primary, OnDefaultChanged);
+    HookConVarChange(g_Cvar_Def_Secondary, OnDefaultChanged);
+    HookConVarChange(g_Cvar_Free_Kevlar, OnDefaultChanged);
+    HookConVarChange(g_Cvar_Free_HE, OnDefaultChanged);
 
     if(g_hRebuyCookies == INVALID_HANDLE)
     {
@@ -264,6 +289,21 @@ public void OnFreeOnSpawnChanged(ConVar cvar, const char[] oldValue, const char[
     g_bFreeOnSpawn = GetConVarBool(g_Cvar_FreeOnSpawn);
 }
 
+public void OnDefaultChanged(ConVar cvar, const char[] oldValue, const char[] newValue)
+{
+    if(cvar == g_Cvar_Def_Primary)
+        GetConVarString(g_Cvar_Def_Primary, sDefPrimary, sizeof(sDefPrimary));
+
+    else if(cvar == g_Cvar_Def_Secondary)
+        GetConVarString(g_Cvar_Def_Secondary, sDefSecondary, sizeof(sDefSecondary));
+
+    else if(cvar == g_Cvar_Free_Kevlar)
+        g_bFreeKevlar = GetConVarBool(g_Cvar_Free_Kevlar);
+
+    else if(cvar == g_Cvar_Free_HE)
+        g_bFreeHe = GetConVarBool(g_Cvar_Free_HE);
+}
+
 public Action OnWeaponCanUse(int client, int weapon)
 {
     char weaponentity[64];
@@ -307,7 +347,18 @@ public void OnClientCookiesCached(int client)
 
         if(sBuffer2[0] == '\0')
         {
-            Format(sBuffer2, sizeof(sBuffer2), "");
+            if(i == SLOT_PRIMARY)
+            {
+                Format(sBuffer2, sizeof(sBuffer2), "%s", sDefPrimary);
+            }
+            else if(i == SLOT_SECONDARY)
+            {
+                Format(sBuffer2, sizeof(sBuffer2), "%s", sDefSecondary);
+            }
+            else
+            {
+                Format(sBuffer2, sizeof(sBuffer2), "");
+            }
             SaveLoadoutCookie(client, i, sBuffer2);
         }
     }
@@ -341,6 +392,11 @@ public void OnConfigsExecuted()
     g_iCooldownMode = GetConVarInt(g_Cvar_CooldownMode);
     g_fGlobalCooldown = GetConVarFloat(g_Cvar_GlobalCooldown);
     g_bFreeOnSpawn = GetConVarBool(g_Cvar_FreeOnSpawn);
+
+    GetConVarString(g_Cvar_Def_Primary, sDefPrimary, sizeof(sDefPrimary));
+    GetConVarString(g_Cvar_Def_Secondary, sDefSecondary, sizeof(sDefSecondary));
+    g_bFreeKevlar = GetConVarBool(g_Cvar_Free_Kevlar);
+    g_bFreeHe = GetConVarBool(g_Cvar_Free_HE);
 
     LoadConfig();
     CreateMenuCommand();
@@ -578,6 +634,11 @@ public Action CS_OnBuyCommand(int client, const char[] weapon)
     return Plugin_Continue;
 }
 
+public void OnRoundStart(Event event, const char[] name, bool dontBroadcast)
+{
+    g_bZombieSpawned = false;
+}
+
 public void OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {
     int client = GetClientOfUserId(GetEventInt(event, "userid"));
@@ -585,10 +646,38 @@ public void OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
     if(g_bAutoRebuy[client])
     {
         if(ZR_IsClientHuman(client))
-            BuySavedLoadout(client, true);
+            CreateTimer(0.5, DelayApplyTimer, client);
     }
 
     ResetClientData(client);
+
+    if(ZR_IsClientHuman(client))
+    {
+        int grenade = GetPlayerWeaponSlot(client, SLOT_GRENADE);
+        int kevlar = GetEntProp(client, Prop_Send, "m_ArmorValue");
+
+        if(kevlar < 100 && g_bFreeKevlar)
+        {
+            SetEntProp(client, Prop_Send, "m_ArmorValue", 100);
+            SetEntProp(client, Prop_Send, "m_bHasHelmet", 1);
+        }
+
+        if(grenade == -1 && g_bFreeHe)
+        {
+            GivePlayerItem(client, "weapon_hegrenade");
+        }
+    }
+}
+
+public Action DelayApplyTimer(Handle timer, any client)
+{
+    if(!IsClientInGame(client) || !IsPlayerAlive(client))
+        return Plugin_Handled;
+
+    if(ZR_IsClientHuman(client))
+        BuySavedLoadout(client, true);
+
+    return Plugin_Handled;
 }
 
 public Action Command_Restrict(int client, int args)
@@ -1160,7 +1249,7 @@ void PurchaseWeapon(int client, const char[] entity, bool loadout, bool free = f
         else 
             expirecooldown = g_fPurchaseGlobalCooldown[client];
         
-        if(!IsClientByPassGlobalCooldown(client))
+        if(!IsClientByPassGlobalCooldown(client) && g_bZombieSpawned &&!StrEqual(entity, "weapon_kevlar"))
         {
             if(cooldown > 0 && thetime < expirecooldown && !loadout)
             {
@@ -1209,7 +1298,7 @@ void PurchaseWeapon(int client, const char[] entity, bool loadout, bool free = f
             totalprice = originalprice;
         }
 
-        if(totalprice > cash)
+        if(totalprice > cash && g_bZombieSpawned)
         {
             if(!IsClientByPassPrice(client, index))
             {   
@@ -1220,6 +1309,12 @@ void PurchaseWeapon(int client, const char[] entity, bool loadout, bool free = f
 
         if(StrEqual(entity, "weapon_kevlar"))
         {
+            if(GetEntProp(client, Prop_Send, "m_ArmorValue") >= 100)
+            {
+                PrintToChat(client, " \x04%s\x01 You already have Kevlar!", sTag);
+                return;
+            }
+
             if(!loadout)
             {
                 if(!ismulti)
@@ -1373,9 +1468,10 @@ void PurchaseWeapon(int client, const char[] entity, bool loadout, bool free = f
         }
         
         if(!IsClientByPassCount(client, index))
-            SetPurchaseCount(client, g_Weapon[index].data_name, 1, true);
+            if(!free)
+                SetPurchaseCount(client, g_Weapon[index].data_name, 1, true);
 
-        if(cooldown > 0)
+        if(cooldown > 0 && g_bZombieSpawned)
         {
             if(g_iCooldownMode == 2)
                 SetPurchaseCooldown(client, g_Weapon[index].data_name, thetime + cooldown);
@@ -2215,6 +2311,12 @@ stock void GivePlayerItem2(int client, const char[] weaponentity)
     }
     GivePlayerItem(client, weaponentity);
     SetEntProp(client, Prop_Send, "m_iTeamNum", team);
+}
+
+public Action ZR_OnClientInfect(int &client, int &attacker, bool &motherInfect, bool &respawnoverride, bool &respawn)
+{
+    if(!g_bZombieSpawned)
+        g_bZombieSpawned = true;
 }
 
 stock void SetClientByPassPrice(int client, int weaponindex, bool value)
