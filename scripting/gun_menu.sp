@@ -1381,7 +1381,7 @@ void PurchaseWeapon(int client, const char[] entity, bool loadout, bool free = f
 
             SetEntProp(client, Prop_Send, "m_bHasHelmet", 1);
 
-            if(!IsClientByPassPrice(client, index) && !free)
+            if(!IsClientByPassPrice(client, index) && !free && g_bZombieSpawned)
                 SetEntProp(client, Prop_Send, "m_iAccount", cash - totalprice);
 
             if(!IsClientByPassCount(client, index))
@@ -1455,7 +1455,7 @@ void PurchaseWeapon(int client, const char[] entity, bool loadout, bool free = f
             }
         }
 
-        if(!IsClientByPassPrice(client, index) && !free)
+        if(!IsClientByPassPrice(client, index) && !free && g_bZombieSpawned)
             SetEntProp(client, Prop_Send, "m_iAccount", cash - totalprice);
 
         if(StrEqual(g_Weapon[index].data_entity, "weapon_hkp2000", false))
