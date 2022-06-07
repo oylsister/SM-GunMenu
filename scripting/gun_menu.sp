@@ -12,6 +12,10 @@
 #include <zombiereloaded>
 #include <smrpg_armorplus>
 
+bool zombiereloaded;
+bool zombieriot;
+bool smrpg_armor;
+
 #pragma newdecls required
 
 #define SLOT_PRIMARY 0
@@ -200,6 +204,49 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
     MarkNativeAsOptional("SMRPG_Armor_GetClientMaxArmor");
 
     return APLRes_Success;
+}
+
+public void OnAllPluginsLoaded()
+{
+    zombiereloaded = LibraryExists("zombiereloaded");
+    zombieriot = LibraryExists("zombieriot");
+    smrpg_armor = LibraryExists("smrpg_armorplus");
+}
+ 
+public void OnLibraryRemoved(const char[] name)
+{
+    if (StrEqual(name, "zombiereloaded"))
+    {
+        zombiereloaded = false;
+    }
+
+    if (StrEqual(name, "zombieriot"))
+    {
+        zombieriot = false;
+    }
+
+    if (StrEqual(name, "zombiereloaded"))
+    {
+        zombiereloaded = false;
+    }
+}
+ 
+public void OnLibraryAdded(const char[] name)
+{
+    if (StrEqual(name, "zombiereloaded"))
+    {
+        zombiereloaded = true;
+    }
+
+    if (StrEqual(name, "zombieriot"))
+    {
+        zombieriot = true;
+    }
+
+    if (StrEqual(name, "smrpg_armorplus"))
+    {
+        smrpg_armor = true;
+    }
 }
 
 void ResetClientData(int client)
@@ -643,16 +690,37 @@ public void OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {
     int client = GetClientOfUserId(GetEventInt(event, "userid"));
 
-    if(g_bAutoRebuy[client])
+    if(zombiereloaded)
     {
+        if(g_bAutoRebuy[client])
+        {
+            if(ZR_IsClientHuman(client))
+                CreateTimer(0.5, DelayApplyTimer, client);
+        }
+
         if(ZR_IsClientHuman(client))
-            CreateTimer(0.5, DelayApplyTimer, client);
+        {
+            int grenade = GetPlayerWeaponSlot(client, SLOT_GRENADE);
+            int kevlar = GetEntProp(client, Prop_Send, "m_ArmorValue");
+
+            if(kevlar < 100 && g_bFreeKevlar)
+            {
+                SetEntProp(client, Prop_Send, "m_ArmorValue", 100);
+                SetEntProp(client, Prop_Send, "m_bHasHelmet", 1);
+            }
+
+            if(grenade == -1 && g_bFreeHe)
+            {
+                GivePlayerItem(client, "weapon_hegrenade");
+            }
+        }
     }
 
-    ResetClientData(client);
-
-    if(ZR_IsClientHuman(client))
+    else
     {
+        if(g_bAutoRebuy[client])  
+            CreateTimer(0.5, DelayApplyTimer, client);
+
         int grenade = GetPlayerWeaponSlot(client, SLOT_GRENADE);
         int kevlar = GetEntProp(client, Prop_Send, "m_ArmorValue");
 
@@ -667,6 +735,8 @@ public void OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
             GivePlayerItem(client, "weapon_hegrenade");
         }
     }
+
+    ResetClientData(client);
 }
 
 public Action DelayApplyTimer(Handle timer, any client)
@@ -1189,10 +1259,6 @@ void PurchaseWeapon(int client, const char[] entity, bool loadout, bool free = f
     {
         return;
     }
-
-    bool zombiereloaded = (GetFeatureStatus(FeatureType_Native, "ZR_IsClientZombie") == FeatureStatus_Available);
-    bool zombieriot = (GetFeatureStatus(FeatureType_Native, "ZRiot_IsClientZombie") == FeatureStatus_Available);
-    bool smrpg_armor = (GetFeatureStatus(FeatureType_Native, "SMRPG_Armor_GetClientMaxArmor") == FeatureStatus_Available);
 
     if(!IsPlayerAlive(client))
     {
