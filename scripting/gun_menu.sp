@@ -697,43 +697,12 @@ public void OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
             if(ZR_IsClientHuman(client))
                 CreateTimer(0.5, DelayApplyTimer, client);
         }
-
-        if(ZR_IsClientHuman(client))
-        {
-            int grenade = GetPlayerWeaponSlot(client, SLOT_GRENADE);
-            int kevlar = GetEntProp(client, Prop_Send, "m_ArmorValue");
-
-            if(kevlar < 100 && g_bFreeKevlar)
-            {
-                SetEntProp(client, Prop_Send, "m_ArmorValue", 100);
-                SetEntProp(client, Prop_Send, "m_bHasHelmet", 1);
-            }
-
-            if(grenade == -1 && g_bFreeHe)
-            {
-                GivePlayerItem(client, "weapon_hegrenade");
-            }
-        }
     }
 
     else
     {
         if(g_bAutoRebuy[client])  
             CreateTimer(0.5, DelayApplyTimer, client);
-
-        int grenade = GetPlayerWeaponSlot(client, SLOT_GRENADE);
-        int kevlar = GetEntProp(client, Prop_Send, "m_ArmorValue");
-
-        if(kevlar < 100 && g_bFreeKevlar)
-        {
-            SetEntProp(client, Prop_Send, "m_ArmorValue", 100);
-            SetEntProp(client, Prop_Send, "m_bHasHelmet", 1);
-        }
-
-        if(grenade == -1 && g_bFreeHe)
-        {
-            GivePlayerItem(client, "weapon_hegrenade");
-        }
     }
 
     ResetClientData(client);
@@ -744,9 +713,20 @@ public Action DelayApplyTimer(Handle timer, any client)
     if(!IsClientInGame(client) || !IsPlayerAlive(client))
         return Plugin_Handled;
 
-    if(ZR_IsClientHuman(client))
-        BuySavedLoadout(client, true);
+    BuySavedLoadout(client, true);
+    int grenade = GetPlayerWeaponSlot(client, SLOT_GRENADE);
+    int kevlar = GetEntProp(client, Prop_Send, "m_ArmorValue");
 
+    if(kevlar < 100 && g_bFreeKevlar)
+    {
+        SetEntProp(client, Prop_Send, "m_ArmorValue", 100);
+        SetEntProp(client, Prop_Send, "m_bHasHelmet", 1);
+    }
+
+    if(grenade == -1 && g_bFreeHe)
+    {
+        GivePlayerItem(client, "weapon_hegrenade");
+    }
     return Plugin_Handled;
 }
 
@@ -760,6 +740,17 @@ public Action Command_Restrict(int client, int args)
 
     char sArg[64];
     GetCmdArg(1, sArg, sizeof(sArg));
+
+    if(StrEqual(sArg, "all"))
+    {
+        for(int i = 0; i < g_iTotal; i++)
+        {
+            g_Weapon[i].data_restrict = true;
+        }
+
+        PrintToChatAll(" \x04%s\x01 Weapon-Type \x06\"All\" \x01has been restricted.", sTag);
+        return Plugin_Handled;
+    }
 
     bool found = false;
 
@@ -797,6 +788,17 @@ public Action Command_Unrestrict(int client, int args)
 
     char sArg[64];
     GetCmdArg(1, sArg, sizeof(sArg));
+
+    if(StrEqual(sArg, "all"))
+    {
+        for(int i = 0; i < g_iTotal; i++)
+        {
+            g_Weapon[i].data_restrict = false;
+        }
+
+        PrintToChatAll(" \x04%s\x01 Weapon-Type \x06\"All\" \x01has been unrestricted.", sTag);
+        return Plugin_Handled;
+    }
 
     bool found = false;
 
@@ -859,7 +861,7 @@ public void RestrictTypeWeapon(const char[] weapontype)
             g_Weapon[i].data_restrict = true;
         }
     }
-    PrintToChatAll(" \x04%s\x01 Weapon-Type \x06\"%s\" \x01has been unrestricted.", sTag, weapontype);
+    PrintToChatAll(" \x04%s\x01 Weapon-Type \x06\"%s\" \x01has been restricted.", sTag, weapontype);
 }
 
 public void UnrestrictTypeWeapon(const char[] weapontype)
