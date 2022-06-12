@@ -1317,14 +1317,22 @@ void PurchaseWeapon(int client, const char[] entity, bool loadout, bool free = f
         else 
             expirecooldown = g_fPurchaseGlobalCooldown[client];
         
-        if(!IsClientByPassGlobalCooldown(client) && g_bZombieSpawned &&!StrEqual(entity, "weapon_kevlar"))
+        if(!IsClientByPassGlobalCooldown(client) &&!StrEqual(entity, "weapon_kevlar"))
         {
             if(cooldown > 0 && thetime < expirecooldown && !loadout)
             {
                 if(!IsClientByPassCooldown(client, index))
                 {
-                    PrintToChat(client, " \x04%s\x01 Weapon \x06\"%s\" \x01purchasing is on the cooldown. Available again in \x06%d\x01 seconds.", sTag, g_Weapon[index].data_name, RoundToNearest(expirecooldown - thetime));
-                    return;
+                    if(zombiereloaded && g_bZombieSpawned)
+                    {
+                        PrintToChat(client, " \x04%s\x01 Weapon \x06\"%s\" \x01purchasing is on the cooldown. Available again in \x06%d\x01 seconds.", sTag, g_Weapon[index].data_name, RoundToNearest(expirecooldown - thetime));
+                        return;
+                    }
+                    else
+                    {
+                        PrintToChat(client, " \x04%s\x01 Weapon \x06\"%s\" \x01purchasing is on the cooldown. Available again in \x06%d\x01 seconds.", sTag, g_Weapon[index].data_name, RoundToNearest(expirecooldown - thetime));
+                        return;
+                    }
                 }
             }
         }
@@ -1366,12 +1374,23 @@ void PurchaseWeapon(int client, const char[] entity, bool loadout, bool free = f
             totalprice = originalprice;
         }
 
-        if(totalprice > cash && g_bZombieSpawned)
+        if(totalprice > cash)
         {
-            if(!IsClientByPassPrice(client, index))
-            {   
-                PrintToChat(client, " \x04%s\x01 You don't have enough cash to purchase this item.", sTag);
-                return;
+            if(zombiereloaded && g_bZombieSpawned)
+            {
+                if(!IsClientByPassPrice(client, index))
+                {   
+                    PrintToChat(client, " \x04%s\x01 You don't have enough cash to purchase this item.", sTag);
+                    return;
+                }
+            }
+            else
+            {
+                if(!IsClientByPassPrice(client, index))
+                {   
+                    PrintToChat(client, " \x04%s\x01 You don't have enough cash to purchase this item.", sTag);
+                    return;
+                }
             }
         }
 
@@ -1393,7 +1412,7 @@ void PurchaseWeapon(int client, const char[] entity, bool loadout, bool free = f
                     }
                     else
                     {
-                        PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01. You can only purchase this item again \x06%i\x01 times.", sTag, g_Weapon[index].data_name, purchaseleft);
+                        PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01. You can only purchase this item again \x06%i\x01 times.", sTag, g_Weapon[index].data_name, purchaseleft - 1);
                     }
                 }
                 else
@@ -1426,11 +1445,11 @@ void PurchaseWeapon(int client, const char[] entity, bool loadout, bool free = f
                         {
                             if(purchasecount > 0)
                             {
-                                PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01 for \x06%i$\x01 because you re-purchase this weapon again. And you only can purchase this item again \x06%i\x01 times.", sTag, g_Weapon[index].data_name, totalprice, purchaseleft);
+                                PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01 for \x06%i$\x01 because you re-purchase this weapon again. And you only can purchase this item again \x06%i\x01 times.", sTag, g_Weapon[index].data_name, totalprice, purchaseleft - 1);
                             }
                             else
                             {
-                                PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01. Next time it will cost \x06\"x%0.2f\"\x01 from original price to purchase. And you only can purchase this item again \x06%i\x01 times.", sTag, g_Weapon[index].data_name, multiprice, purchaseleft);
+                                PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01. Next time it will cost \x06\"x%0.2f\"\x01 from original price to purchase. And you only can purchase this item again \x06%i\x01 times.", sTag, g_Weapon[index].data_name, multiprice, purchaseleft - 1);
                             }
                         }
                     }
@@ -1449,9 +1468,15 @@ void PurchaseWeapon(int client, const char[] entity, bool loadout, bool free = f
 
             SetEntProp(client, Prop_Send, "m_bHasHelmet", 1);
 
-            if(!IsClientByPassPrice(client, index) && !free && g_bZombieSpawned)
-                SetEntProp(client, Prop_Send, "m_iAccount", cash - totalprice);
+            if(!IsClientByPassPrice(client, index) && !free)
+            {
+                if(zombiereloaded && g_bZombieSpawned)
+                    SetEntProp(client, Prop_Send, "m_iAccount", cash - totalprice);
 
+                else
+                    SetEntProp(client, Prop_Send, "m_iAccount", cash - totalprice);
+
+            }
             if(!IsClientByPassCount(client, index))
                 SetPurchaseCount(client, g_Weapon[index].data_name, 1, true);
 
@@ -1479,7 +1504,7 @@ void PurchaseWeapon(int client, const char[] entity, bool loadout, bool free = f
                 }
                 else
                 {
-                    PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01. You can only purchase this item again \x06%i\x01 times.", sTag, g_Weapon[index].data_name, purchaseleft);
+                    PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01. You can only purchase this item again \x06%i\x01 times.", sTag, g_Weapon[index].data_name, purchaseleft - 1);
                 }
             }
             else
@@ -1512,19 +1537,25 @@ void PurchaseWeapon(int client, const char[] entity, bool loadout, bool free = f
                     {
                         if(purchasecount > 0)
                         {
-                            PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01 for \x06%i$\x01 because you re-purchase this weapon again. And you only can purchase this item again \x06%i\x01 times.", sTag, g_Weapon[index].data_name, totalprice, purchaseleft);
+                            PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01 for \x06%i$\x01 because you re-purchase this weapon again. And you only can purchase this item again \x06%i\x01 times.", sTag, g_Weapon[index].data_name, totalprice, purchaseleft - 1);
                         }
                         else
                         {
-                            PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01. Next time it will cost \x06\"x%0.2f\"\x01 from original price to purchase. And you only can purchase this item again \x06%i\x01 times.", sTag, g_Weapon[index].data_name, multiprice, purchaseleft);
+                            PrintToChat(client, " \x04%s\x01 You have purchased \x04\"%s\"\x01. Next time it will cost \x06\"x%0.2f\"\x01 from original price to purchase. And you only can purchase this item again \x06%i\x01 times.", sTag, g_Weapon[index].data_name, multiprice, purchaseleft - 1);
                         }
                     }
                 }
             }
         }
 
-        if(!IsClientByPassPrice(client, index) && !free && g_bZombieSpawned)
-            SetEntProp(client, Prop_Send, "m_iAccount", cash - totalprice);
+        if(!IsClientByPassPrice(client, index) && !free)
+        {
+            if(zombiereloaded && g_bZombieSpawned)
+                SetEntProp(client, Prop_Send, "m_iAccount", cash - totalprice);
+
+            else
+                SetEntProp(client, Prop_Send, "m_iAccount", cash - totalprice);
+        }
 
         if(StrEqual(g_Weapon[index].data_entity, "weapon_hkp2000", false))
         {
@@ -1539,13 +1570,24 @@ void PurchaseWeapon(int client, const char[] entity, bool loadout, bool free = f
             if(!free)
                 SetPurchaseCount(client, g_Weapon[index].data_name, 1, true);
 
-        if(cooldown > 0 && g_bZombieSpawned)
+        if(cooldown > 0)
         {
-            if(g_iCooldownMode == 2)
-                SetPurchaseCooldown(client, g_Weapon[index].data_name, thetime + cooldown);
+            if(zombiereloaded && g_bZombieSpawned)
+            {
+                if(g_iCooldownMode == 2)
+                    SetPurchaseCooldown(client, g_Weapon[index].data_name, thetime + cooldown);
 
+                else
+                    SetPurchaseGlobalCooldown(client, thetime + cooldown);
+            }
             else
-                SetPurchaseGlobalCooldown(client, thetime + cooldown);
+            {
+                if(g_iCooldownMode == 2)
+                    SetPurchaseCooldown(client, g_Weapon[index].data_name, thetime + cooldown);
+
+                else
+                    SetPurchaseGlobalCooldown(client, thetime + cooldown);
+            }
         }
 
         return;
