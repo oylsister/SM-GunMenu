@@ -690,20 +690,8 @@ public void OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {
     int client = GetClientOfUserId(GetEventInt(event, "userid"));
 
-    if(zombiereloaded)
-    {
-        if(g_bAutoRebuy[client])
-        {
-            if(ZR_IsClientHuman(client))
-                CreateTimer(0.5, DelayApplyTimer, client);
-        }
-    }
-
-    else
-    {
-        if(g_bAutoRebuy[client])  
-            CreateTimer(0.5, DelayApplyTimer, client);
-    }
+    if(g_bAutoRebuy[client])  
+        CreateTimer(0.5, DelayApplyTimer, client);
 
     ResetClientData(client);
 }
@@ -711,6 +699,9 @@ public void OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 public Action DelayApplyTimer(Handle timer, any client)
 {
     if(!IsClientInGame(client) || !IsPlayerAlive(client))
+        return Plugin_Handled;
+
+    if(zombiereloaded && ZR_IsClientZombie(client))
         return Plugin_Handled;
 
     BuySavedLoadout(client, true);
