@@ -131,7 +131,7 @@ public void OnPluginStart()
     g_Cvar_FreeOnSpawn = CreateConVar("sm_gunmenu_free_onspawn", "1.0", "Free purchase on spawn", _, true, 0.0, true, 1.0);
 
     g_Cvar_Def_Primary = CreateConVar("sm_gunmenu_default_primary", "P90", "Default Primary weapon");
-    g_Cvar_Def_Secondary = CreateConVar("sm_gunmenu_default_primary", "Elite", "Default Secondary weapon");
+    g_Cvar_Def_Secondary = CreateConVar("sm_gunmenu_default_secondary", "Elite", "Default Secondary weapon");
     g_Cvar_Free_Kevlar = CreateConVar("sm_gunmenu_free_kevlar", "1", "Give Free Kevlar to player", _, true, 0.0, true, 1.0);
     g_Cvar_Free_HE = CreateConVar("sm_gunmenu_free_he", "1", "Give Free HE to player", _, true, 0.0, true, 1.0);
 
