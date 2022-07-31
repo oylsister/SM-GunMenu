@@ -130,7 +130,7 @@ public void OnPluginStart()
     g_Cvar_CooldownMode = CreateConVar("sm_gunmenu_cooldown_mode", "1.0", "0 = Disabled | 1 = Global Cooldown | 2 = Inviduals Cooldown", _, true, 0.0, true, 2.0);
     g_Cvar_GlobalCooldown = CreateConVar("sm_gunmenu_global_cooldown", "5.0", "Length of Global Cooldown in seconds", _, true, 0.0, false);
     g_Cvar_FreeOnSpawn = CreateConVar("sm_gunmenu_free_onspawn", "1.0", "Free purchase on spawn", _, true, 0.0, true, 1.0);
-    g_Cvar_MenuOnSpawn = CreateConVar("sm_gunmenu_menu_onspawn", "1.0", "Toggleg un menu opening on spawn", _, true, 0.0, true, 1.0);
+    g_Cvar_MenuOnSpawn = CreateConVar("sm_gunmenu_menu_onspawn", "1.0", "Display gun menu to players on spawn", _, true, 0.0, true, 1.0);
 
     g_Cvar_Def_Primary = CreateConVar("sm_gunmenu_default_primary", "P90", "Default Primary weapon");
     g_Cvar_Def_Secondary = CreateConVar("sm_gunmenu_default_secondary", "Elite", "Default Secondary weapon");
